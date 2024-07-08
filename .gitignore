@@ -1,0 +1,11 @@
+.idea
+venv
+
+data
+synth
+working
+
+wandb
+parameterSearc/wandb
+
+*_hidden*
