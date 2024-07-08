@@ -584,7 +584,7 @@ class FINDIFF(BaseSynthesizer):
                     description.format(loss= batch_losses_mean)
                 )
             if self._use_wandb:
-                wandb.log({'loss': batch_losses_mean})
+                wandb.log({'Loss': batch_losses_mean})
 
     @random_state
     def sample(self, n):
