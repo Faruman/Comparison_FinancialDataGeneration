@@ -146,7 +146,7 @@ real_data = real_data.groupby("Id").progress_apply(truncate_sequence, max_len= 3
 sweep_config = {
     "name": "Param Search",
     "method": "bayes",
-    "metric": {"goal": "maximize", "name": "Jensen Shannon Distance"},
+    "metric": {"goal": "minimize", "name": "Jensen Shannon Distance"},
     "parameters": {
         "sample_len": {"values": [3, 5, 10, 15]},
         "attribute_noise_dim": {"min": 5, "max": 30},

@@ -122,7 +122,7 @@ metadata.detect_from_dataframe(real_data)
 sweep_config = {
     "name": "Param Search",
     "method": "bayes",
-    "metric": {"goal": "maximize", "name": "Jensen Shannon Distance"},
+    "metric": {"goal": "minimize", "name": "Jensen Shannon Distance"},
     "parameters": {
         "cat_embedding_dim": {"values": [2, 4, 8]},
         "mlp_dim": {"values": [(512, 512, 512), (1024, 1024, 1024, 1024), (2048, 2048, 2048)]},
