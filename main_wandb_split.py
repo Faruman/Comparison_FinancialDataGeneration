@@ -199,5 +199,5 @@ wandb.finish()
 #report["Algorithm"] = "Banksformer"
 #result_df = pd.concat((result_df, report))
 
-result_df.to_excel("./working/evaluation_results.xlsx")
+result_df.to_excel("./working/evaluation_results_split.xlsx")
 print(result_df)
