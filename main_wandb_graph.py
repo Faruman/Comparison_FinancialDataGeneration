@@ -47,8 +47,6 @@ if not os.path.exists("./working/transformed_pca_extd_df_graph.csv"):
     real_data["index"] = pd.to_numeric(real_data["index"]).astype(int)
     real_data = real_data.rename(columns={"index": "timeIndicator"})
 
-    real_data = real_data.sample(5000)
-
     if add_transaction_clusters:
         if real_data.shape[0] > 500000:
             cl_data = StandardScaler().fit_transform(real_data.drop(["source_id", "target_id"], axis=1).sample(100000))
