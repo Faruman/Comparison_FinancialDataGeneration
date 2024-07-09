@@ -4,6 +4,7 @@ import pandas as pd
 from sdmetrics import visualization
 from sdmetrics.reports.single_table.diagnostic_report import DiagnosticReport
 from sdmetrics.reports.single_table.quality_report import QualityReport
+from sdmetrics.reports.base_report import BaseReport
 
 from sdv.errors import VisualizationUnavailableError
 
@@ -30,6 +31,52 @@ def evaluate_quality(real_data, synthetic_data, metadata, verbose=True):
     quality_report.generate(real_data, synthetic_data, metadata.to_dict(), verbose)
     return quality_report
 
+
+class SimilarityReport(BaseReport):
+    """Single table quality report.
+
+    This class creates a similarity report for single-table data. It calculates the quality
+    score along two properties - Column Shapes and Column Pair Trends.
+    """
+
+    def __init__(self):
+        super().__init__()
+
+    def generate(self, real_data, synthetic_data, metadata, verbose=True):
+        if not isinstance(metadata, dict):
+            raise TypeError('The provided metadata is not a dictionary.')
+
+        self._validate(real_data, synthetic_data, metadata)
+
+
+
+
+        self._properties = {}
+
+
+
+
+def evaluate_similarity(real_data, synthetic_data, metadata, verbose=True):
+    """Evaluate the quality of the synthetic data.
+
+    Args:
+        real_data (pd.DataFrame):
+            The table containing the real data.
+        synthetic_data (pd.DataFrame):
+            The table containing the synthetic data.
+        metadata (SingleTableMetadata):
+            The metadata object describing the real/synthetic data.
+        verbose (bool):
+            Whether or not to print report summary and progress.
+            Defaults to True.
+
+    Returns:
+        QualityReport:
+            Single table quality report object.
+    """
+    similariy_report = SimilarityReport()
+    similariy_report.generate(real_data, synthetic_data, metadata.to_dict(), verbose)
+    return similariy_report
 
 def run_diagnostic(real_data, synthetic_data, metadata, verbose=True):
     """Run diagnostic report for the synthetic data.
