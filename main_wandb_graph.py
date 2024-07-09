@@ -218,13 +218,7 @@ wandb.finish()
 
 
 ## load data
-real_data = pd.read_csv("./data/transformed_pca_extd_df.csv", index_col=0)
-real_data = real_data.reset_index()
-real_data["index"] = pd.to_numeric(real_data["index"]).astype(int)
-real_data = real_data.rename(columns={"index": "timeIndicator"})
-real_data["source_id"] = real_data["source_id"].astype(int).astype(str)
-real_data["target_id"] = real_data["target_id"].astype(int).astype(str)
-
+real_data = pd.read_csv("./working/transformed_pca_extd_df_graph.csv", index_col=0)
 metadata = SingleTableMetadata()
 metadata.detect_from_dataframe(real_data)
 
