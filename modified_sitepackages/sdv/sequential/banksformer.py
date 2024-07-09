@@ -38,7 +38,7 @@ import torch.nn.functional as F
 
 logger = logging.getLogger(__name__)
 
-AttributeFeatureTriplet = Tuple[Optional[np.ndarray], list[np.ndarray], list[np.ndarray]]
+AttributeFeatureTriplet = Tuple[Optional[np.ndarray], List[np.ndarray], List[np.ndarray]]
 NumpyArrayTriple = Tuple[np.ndarray, np.ndarray, np.ndarray]
 
 ## gretelai errors
@@ -445,7 +445,7 @@ class ContinuousOutput(Output):
 
 def create_outputs_from_data(
     attributes: Optional[np.ndarray],
-    features: list[np.ndarray],
+    features: List[np.ndarray],
     attribute_types: Optional[List[OutputType]],
     feature_types: Optional[List[OutputType]],
     normalization: Normalization,
@@ -686,7 +686,7 @@ def _grouped_min_and_max(
 
 
 def transform_features(
-    original_data: list[np.ndarray],
+    original_data: List[np.ndarray],
     outputs: List[Output],
     max_sequence_len: int,
 ) -> Tuple[np.ndarray, Optional[np.ndarray]]:
@@ -787,7 +787,7 @@ def transform_features(
 
 def inverse_transform_attributes(
     transformed_data: np.ndarray,
-    outputs: list[Output],
+    outputs: List[Output],
 ) -> Optional[np.ndarray]:
     """Inverse of transform_attributes to map back to original space.
 
@@ -1001,7 +1001,7 @@ class _DataFrameConverter(abc.ABC):
     def invert(
         self,
         attributes: Optional[np.ndarray],
-        features: list[np.ndarray],
+        features: List[np.ndarray],
     ) -> pd.DataFrame:
         """Invert from DGAN input format back to DataFrame.
 
@@ -1162,7 +1162,7 @@ class _WideDataFrameConverter(_DataFrameConverter):
         return attributes, [seq for seq in inp_features], [seq for seq in tar_features]
 
     def invert(
-        self, attributes: Optional[np.ndarray], features: list[np.ndarray]
+        self, attributes: Optional[np.ndarray], features: List[np.ndarray]
     ) -> pd.DataFrame:
         if self._attribute_columns:
             if attributes is None:
@@ -1511,7 +1511,7 @@ class _LongDataFrameConverter(_DataFrameConverter):
     def invert(
         self,
         attributes: Optional[np.ndarray],
-        features: list[np.ndarray],
+        features: List[np.ndarray],
     ) -> pd.DataFrame:
         sequences = []
         for seq_index, seq in enumerate(features):
@@ -1636,8 +1636,8 @@ def find_max_consecutive_nans(array: np.ndarray) -> int:
     )
     return max_cons_nan
 def validation_check(
-    features: list[np.ndarray],
-    continuous_features_ind: list[int],
+    features: List[np.ndarray],
+    continuous_features_ind: List[int],
     invalid_examples_ratio_cutoff: float = 0.5,
     nans_ratio_cutoff: float = 0.1,
     consecutive_nans_max: int = 5,
@@ -1730,7 +1730,7 @@ def validation_check(
     return valid_examples
 
 def nan_linear_interpolation(
-    features: list[np.ndarray], continuous_features_ind: list[int]
+    features: List[np.ndarray], continuous_features_ind: List[int]
 ):
     """Replaces all NaNs via linear interpolation.
 
@@ -2036,8 +2036,8 @@ class BANKSFORMER:
 
     def train_numpy(
         self,
-        features_inp: Union[np.ndarray, list[np.ndarray]],
-        features_tar: Union[np.ndarray, list[np.ndarray]],
+        features_inp: Union[np.ndarray, List[np.ndarray]],
+        features_tar: Union[np.ndarray, List[np.ndarray]],
         feature_inp_types: Optional[List[OutputType]] = None,
         feature_tar_types: Optional[List[OutputType]] = None,
         attributes: Optional[np.ndarray] = None,
@@ -2882,7 +2882,7 @@ class BANKSFORMERSynthesizer(LossValuesMixin, BaseSynthesizer):
         locales (list or str):
             The default locale(s) to use for AnonymizedFaker transformers.
             Defaults to ``['en_US']``.
-        context_columns (list[str]):
+        context_columns (List[str]):
             A list of strings, representing the columns that do not vary in a sequence.
         segment_size (int):
             If specified, cut each training sequence in several segments of

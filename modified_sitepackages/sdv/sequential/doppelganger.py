@@ -445,7 +445,7 @@ class ContinuousOutput(Output):
 
 def create_outputs_from_data(
     attributes: Optional[np.ndarray],
-    features: list[np.ndarray],
+    features: List[np.ndarray],
     attribute_types: Optional[List[OutputType]],
     feature_types: Optional[List[OutputType]],
     normalization: Normalization,
@@ -686,7 +686,7 @@ def _grouped_min_and_max(
 
 
 def transform_features(
-    original_data: list[np.ndarray],
+    original_data: List[np.ndarray],
     outputs: List[Output],
     max_sequence_len: int,
 ) -> Tuple[np.ndarray, Optional[np.ndarray]]:
@@ -787,7 +787,7 @@ def transform_features(
 
 def inverse_transform_attributes(
     transformed_data: np.ndarray,
-    outputs: list[Output],
+    outputs: List[Output],
 ) -> Optional[np.ndarray]:
     """Inverse of transform_attributes to map back to original space.
 
@@ -1380,7 +1380,7 @@ Sample usage:
 
 logger = logging.getLogger(__name__)
 
-AttributeFeaturePair = Tuple[Optional[np.ndarray], list[np.ndarray]]
+AttributeFeaturePair = Tuple[Optional[np.ndarray], List[np.ndarray]]
 NumpyArrayTriple = Tuple[np.ndarray, np.ndarray, np.ndarray]
 
 NAN_ERROR_MESSAGE = """
@@ -1580,7 +1580,7 @@ class DGAN:
 
     def train_numpy(
         self,
-        features: Union[np.ndarray, list[np.ndarray]],
+        features: Union[np.ndarray, List[np.ndarray]],
         feature_types: Optional[List[OutputType]] = None,
         attributes: Optional[np.ndarray] = None,
         attribute_types: Optional[List[OutputType]] = None
@@ -2557,7 +2557,7 @@ class _DataFrameConverter(abc.ABC):
     def invert(
         self,
         attributes: Optional[np.ndarray],
-        features: list[np.ndarray],
+        features: List[np.ndarray],
     ) -> pd.DataFrame:
         """Invert from DGAN input format back to DataFrame.
 
@@ -2698,7 +2698,7 @@ class _WideDataFrameConverter(_DataFrameConverter):
         return attributes, [seq for seq in features]
 
     def invert(
-        self, attributes: Optional[np.ndarray], features: list[np.ndarray]
+        self, attributes: Optional[np.ndarray], features: List[np.ndarray]
     ) -> pd.DataFrame:
         if self._attribute_columns:
             if attributes is None:
@@ -3011,7 +3011,7 @@ class _LongDataFrameConverter(_DataFrameConverter):
     def invert(
         self,
         attributes: Optional[np.ndarray],
-        features: list[np.ndarray],
+        features: List[np.ndarray],
     ) -> pd.DataFrame:
         sequences = []
         for seq_index, seq in enumerate(features):
@@ -3138,8 +3138,8 @@ def find_max_consecutive_nans(array: np.ndarray) -> int:
 
 
 def validation_check(
-    features: list[np.ndarray],
-    continuous_features_ind: list[int],
+    features: List[np.ndarray],
+    continuous_features_ind: List[int],
     invalid_examples_ratio_cutoff: float = 0.5,
     nans_ratio_cutoff: float = 0.1,
     consecutive_nans_max: int = 5,
@@ -3232,7 +3232,7 @@ def validation_check(
     return valid_examples
 
 def nan_linear_interpolation(
-    features: list[np.ndarray], continuous_features_ind: list[int]
+    features: List[np.ndarray], continuous_features_ind: List[int]
 ):
     """Replaces all NaNs via linear interpolation.
 

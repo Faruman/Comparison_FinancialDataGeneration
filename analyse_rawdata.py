@@ -31,7 +31,7 @@ edgelist = edgelist.rename(columns= {"datetimeIndicator": "count"}).values.tolis
 edgelist = [(x, y, {"count": z}) for x,y,z in edgelist]
 G.add_edges_from(edgelist)
 node_degree_dict=nx.degree(G)
-G_draw= nx.subgraph(G,[x for x in G.nodes() if node_degree_dict[x]>5])
+G_draw= nx.subgraph(G,[x for x in G.nodes() if node_degree_dict[x]>3])
 print('Number of edges: {}'.format(G_draw.number_of_edges()))
 print('Number of nodes: {}'.format(G_draw.number_of_nodes()))
 edge_weight = np.array(list(nx.get_edge_attributes(G_draw,'count').values()))
