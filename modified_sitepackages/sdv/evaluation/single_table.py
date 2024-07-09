@@ -1,6 +1,10 @@
 """Methods to compare the real and synthetic data for single-table."""
-
+import numpy as np
 import pandas as pd
+
+from scipy.stats import ks_2samp
+from scipy.spatial.distance import jensenshannon
+
 from sdmetrics import visualization
 from sdmetrics.reports.single_table.diagnostic_report import DiagnosticReport
 from sdmetrics.reports.single_table.quality_report import QualityReport
@@ -8,6 +12,134 @@ from sdmetrics.reports.base_report import BaseReport
 
 from sdv.errors import VisualizationUnavailableError
 
+from sklearn.preprocessing import LabelEncoder
+
+class KolmogorovSmirnovTest():
+    """
+    Performs the Kolmogorov-Smirnov test for goodness of fit.
+
+    Score:
+        0: the distributions are totally different.
+        1: the distributions are identical.
+    """
+
+    def __init__(self, **kwargs) -> None:
+        pass
+    @staticmethod
+    def name() -> str:
+        return "ks_test"
+
+    @staticmethod
+    def direction() -> str:
+        return "maximize"
+
+    def evaluate(self, X_gt: pd.DataFrame, X_syn: pd.DataFrame, metadata: dict):
+        res = []
+        for col in X_gt.columns:
+            statistic, _ = ks_2samp(X_gt[col], X_syn[col])
+            res.append(1 - statistic)
+
+        return float(np.mean(res))
+
+class JensenShannonDistance():
+    """Evaluate the average Jensen-Shannon distance (metric) between two probability arrays."""
+    def __init__(self, normalize: bool = True, **kwargs) -> None:
+        self.normalize = normalize
+
+    @staticmethod
+    def name() -> str:
+        return "jensenshannon_dist"
+
+    @staticmethod
+    def direction() -> str:
+        return "minimize"
+
+    def _evaluate_stats(self, X_gt: pd.DataFrame, X_syn: pd.DataFrame, metadata: dict):
+        stats_gt = {}
+        stats_syn = {}
+        stats_ = {}
+
+        for col, val in metadata["columns"].items():
+            if val["sdtype"] == "categorical":
+                X_gt.value_counts(dropna=False, normalize=self.normalize
+                ).align(
+                    X_syn.value_counts(dropna=False, normalize=self.normalize),
+                    join="outer",
+                    axis=0,
+                    fill_value=0,
+                )
+            else:
+                local_bins = min(100, len(X_gt[col].unique()))
+                X_gt_bin, gt_bins = pd.cut(X_gt[col], bins=local_bins, retbins=True)
+                X_syn_bin = pd.cut(X_syn[col], bins=gt_bins)
+                stats_gt[col], stats_syn[col] = X_gt_bin.value_counts(
+                    dropna=False, normalize=self.normalize
+                ).align(
+                    X_syn_bin.value_counts(dropna=False, normalize=self.normalize),
+                    join="outer",
+                    axis=0,
+                    fill_value=0,
+                )
+                stats_gt[col] += 1
+                stats_syn[col] += 1
+
+            stats_[col] = jensenshannon(stats_gt[col], stats_syn[col])
+            if np.isnan(stats_[col]):
+                raise RuntimeError("NaNs in prediction")
+
+        return stats_, stats_gt, stats_syn
+
+    def evaluate(
+        self,
+        X_gt: pd.DataFrame,
+        X_syn: pd.DataFrame,
+        metadata: dict
+    ):
+        stats_, _, _ = self._evaluate_stats(X_gt, X_syn, metadata= metadata)
+
+        return sum(stats_.values()) / len(stats_.keys())
+
+class SimilarityReport(BaseReport):
+    """Single table quality report.
+
+    This class creates a similarity report for single-table data. It calculates the quality
+    score along two properties - Column Shapes and Column Pair Trends.
+    """
+
+    def __init__(self):
+        super().__init__()
+
+    def generate(self, real_data, synthetic_data, metadata, verbose=True):
+        if not isinstance(metadata, dict):
+            raise TypeError('The provided metadata is not a dictionary.')
+
+        self._validate(real_data, synthetic_data, metadata)
+
+        columns_to_compare = [key for key, value in metadata['columns'].items() if value["sdtype"] not in ["id"]]
+        metadata['columns'] = {key: value for key, value in metadata['columns'].items() if key in columns_to_compare}
+
+        real_data = real_data[columns_to_compare]
+        synthetic_data = synthetic_data[columns_to_compare]
+
+        for key, value in metadata['columns'].items():
+            if value["sdtype"] == "categorical":
+                le = LabelEncoder()
+                le.fit(real_data[key])
+                real_data[key] = le.transform(real_data[key])
+                synthetic_data[key] = le.transform(synthetic_data[key])
+
+        jsd = JensenShannonDistance()
+        jsd_score = jsd.evaluate(real_data, synthetic_data, metadata= metadata)
+
+        kst = KolmogorovSmirnovTest()
+        kst_score = kst.evaluate(real_data, synthetic_data, metadata= metadata)
+
+        self._properties = {"Property": ["Jensen Shannon Distance", "Kolmogorov Smirnov Test"],
+                            "Score": [jsd_score, kst_score]}
+        self.is_generated = True
+    def get_properties(self):
+        self._check_report_generated()
+        return pd.DataFrame(self._properties)
 
 def evaluate_quality(real_data, synthetic_data, metadata, verbose=True):
     """Evaluate the quality of the synthetic data.
@@ -30,31 +162,6 @@ def evaluate_quality(real_data, synthetic_data, metadata, verbose=True):
     quality_report = QualityReport()
     quality_report.generate(real_data, synthetic_data, metadata.to_dict(), verbose)
     return quality_report
-
-
-class SimilarityReport(BaseReport):
-    """Single table quality report.
-
-    This class creates a similarity report for single-table data. It calculates the quality
-    score along two properties - Column Shapes and Column Pair Trends.
-    """
-
-    def __init__(self):
-        super().__init__()
-
-    def generate(self, real_data, synthetic_data, metadata, verbose=True):
-        if not isinstance(metadata, dict):
-            raise TypeError('The provided metadata is not a dictionary.')
-
-        self._validate(real_data, synthetic_data, metadata)
-
-
-
-
-        self._properties = {}
-
-
-
 
 def evaluate_similarity(real_data, synthetic_data, metadata, verbose=True):
     """Evaluate the quality of the synthetic data.
