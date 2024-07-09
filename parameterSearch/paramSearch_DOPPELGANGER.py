@@ -134,7 +134,7 @@ def truncate_sequence(group, max_len, min_len, id_column):
         return out
     else:
         return pd.DataFrame(columns=group.columns)
-real_data = real_data.groupby("Id").progress_apply(truncate_sequence, max_len= 30, min_len= 5, id_column= "Id").reset_index(drop=True)
+real_data = real_data.groupby("source_id").progress_apply(truncate_sequence, max_len= 30, min_len= 2, id_column= "source_id").reset_index(drop=True)
 
 ## Test CTGAN
 sweep_config = {
