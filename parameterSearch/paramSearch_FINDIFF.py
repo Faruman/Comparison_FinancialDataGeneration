@@ -122,7 +122,7 @@ metadata.detect_from_dataframe(real_data)
 sweep_config = {
     "name": "Param Search",
     "method": "bayes",
-    "metric": {"goal": "maximize", "name": "Column Pair Trends"},
+    "metric": {"goal": "maximize", "name": "Jensen Shannon Distance"},
     "parameters": {
         "cat_embedding_dim": {"values": [2, 4, 8]},
         "mlp_dim": {"values": [(512, 512, 512), (1024, 1024, 1024, 1024), (2048, 2048, 2048)]},
@@ -144,7 +144,7 @@ def main():
                                     l2scale= wandb.config["l2scale"], loss_factor= wandb.config["loss_factor"], learning_rate= wandb.config["learning_rate"],
                                     epochs= wandb.config["epochs"], batch_size= wandb.config["batch_size"], verbose=True, use_wandb=True)
     synthesizer.fit(data=real_data)
-    synthetic_data = synthesizer.sample(num_rows=500)
+    synthetic_data = synthesizer.sample(num_rows=10000)
     diagnostic_report = run_diagnostic(real_data=real_data, synthetic_data=synthetic_data, metadata=metadata)
     quality_report = evaluate_quality(real_data=real_data, synthetic_data=synthetic_data, metadata=metadata)
     similarity_report = evaluate_similarity(real_data= real_data, synthetic_data= synthetic_data, metadata= metadata)

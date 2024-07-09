@@ -58,7 +58,7 @@ wandb.config = {"epochs": 500, "batch_size": 5000}
 ## Priority 3
 synthesizer = WGANGPSynthesizer(metadata, batch_size= wandb.config["batch_size"], epochs= wandb.config["epochs"], verbose= True, use_wandb= True)
 synthesizer.fit(data=real_data)
-synthetic_data = synthesizer.sample(num_rows=500)
+synthetic_data = synthesizer.sample(num_rows=10000)
 synthetic_data.to_csv("./synth/WGANGP_default.csv", index=False)
 print(synthetic_data.head())
 diagnostic_report = run_diagnostic(real_data= real_data, synthetic_data= synthetic_data, metadata= metadata)
@@ -77,7 +77,7 @@ wandb.config = {"epochs": 500, "batch_size": 5000}
 ## Priority 1
 synthesizer = WGANGP_DRSSynthesizer(metadata, batch_size= wandb.config["batch_size"], epochs= wandb.config["epochs"], verbose= True, use_wandb= True)
 synthesizer.fit(data=real_data)
-synthetic_data = synthesizer.sample(num_rows=500)
+synthetic_data = synthesizer.sample(num_rows=10000)
 synthetic_data.to_csv("./synth/WGANGP-DRS_default.csv", index=False)
 print(synthetic_data.head())
 diagnostic_report = run_diagnostic(real_data= real_data, synthetic_data= synthetic_data, metadata= metadata)
@@ -96,7 +96,7 @@ wandb.config = {"epochs": 500, "batch_size": 5000}
 ## Priority 1
 synthesizer = CTGANSynthesizer(metadata, batch_size= wandb.config["batch_size"], epochs= wandb.config["epochs"], verbose= True, use_wandb= True)
 synthesizer.fit(data=real_data)
-synthetic_data = synthesizer.sample(num_rows=500)
+synthetic_data = synthesizer.sample(num_rows=10000)
 synthetic_data.to_csv("./synth/CTGAN_default.csv", index=False)
 print(synthetic_data.head())
 diagnostic_report = run_diagnostic(real_data= real_data, synthetic_data= synthetic_data, metadata= metadata)
@@ -115,7 +115,7 @@ wandb.config = {"epochs": 500, "batch_size": 5000}
 ## Priority 1
 synthesizer = TVAESynthesizer(metadata, batch_size= wandb.config["batch_size"], epochs= wandb.config["epochs"], verbose= True, use_wandb= True)
 synthesizer.fit(data=real_data)
-synthetic_data = synthesizer.sample(num_rows=500)
+synthetic_data = synthesizer.sample(num_rows=10000)
 synthetic_data.to_csv("./synth/TVAE_default.csv", index=False)
 print(synthetic_data.head())
 diagnostic_report = run_diagnostic(real_data= real_data, synthetic_data= synthetic_data, metadata= metadata)
@@ -134,7 +134,7 @@ wandb.config = {"epochs": 500, "batch_size": 5000}
 ### Priority 1
 synthesizer = FINDIFFSynthesizer(metadata, batch_size= wandb.config["batch_size"], epochs= wandb.config["epochs"], verbose= True, use_wandb= True)
 synthesizer.fit(data=real_data)
-synthetic_data = synthesizer.sample(num_rows=500)
+synthetic_data = synthesizer.sample(num_rows=10000)
 synthetic_data.to_csv("./synth/FinDiff_default.csv", index=False)
 diagnostic_report = run_diagnostic(real_data= real_data, synthetic_data= synthetic_data, metadata= metadata)
 quality_report = evaluate_quality(real_data= real_data, synthetic_data= synthetic_data, metadata= metadata)

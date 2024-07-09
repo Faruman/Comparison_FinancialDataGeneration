@@ -146,7 +146,7 @@ real_data = real_data.groupby("Id").progress_apply(truncate_sequence, max_len= 3
 sweep_config = {
     "name": "Param Search",
     "method": "bayes",
-    "metric": {"goal": "maximize", "name": "Column Pair Trends"},
+    "metric": {"goal": "maximize", "name": "Jensen Shannon Distance"},
     "parameters": {
         "sample_len": {"values": [3, 5, 10, 15]},
         "attribute_noise_dim": {"min": 5, "max": 30},
@@ -182,7 +182,7 @@ def main():
                                           attribute_discriminator_beta1 = wandb.config["attribute_discriminator_beta1"], discriminator_rounds = wandb.config["discriminator_rounds"], generator_rounds = wandb.config["generator_rounds"], batch_size= wandb.config["batch_size"],
                                           epochs= wandb.config["epochs"], verbose= True, use_wandb= True)
     synthesizer.fit(data=real_data)
-    synthetic_data = synthesizer.sample(num_rows=500)
+    synthetic_data = synthesizer.sample(num_rows=10000)
     diagnostic_report = run_diagnostic(real_data=real_data, synthetic_data=synthetic_data, metadata=metadata)
     quality_report = evaluate_quality(real_data=real_data, synthetic_data=synthetic_data, metadata=metadata)
     similarity_report = evaluate_similarity(real_data= real_data, synthetic_data= synthetic_data, metadata= metadata)
