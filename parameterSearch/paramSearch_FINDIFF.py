@@ -23,7 +23,7 @@ from sklearn.preprocessing import StandardScaler
 from tensorflow.keras import Model, regularizers
 import tensorflow as tf
 
-from modified_sitepackages.sdv.single_table import TVAESynthesizer
+from modified_sitepackages.sdv.single_table import FINDIFFSynthesizer
 
 from modified_sitepackages.sdv.evaluation.single_table import run_diagnostic, evaluate_quality, evaluate_similarity
 
@@ -140,9 +140,9 @@ sweep_id = wandb.sweep(sweep=sweep_config, project="FinancialDataGeneration_FIND
 ### Priority 1
 def main():
     wandb.init(project="FinancialDataGeneration_ParamSearch", entity="financialDataGeneration")
-    synthesizer = TVAESynthesizer(metadata, embedding_dim= wandb.config["embedding_dim"], compress_dims= wandb.config["compress_dims"], decompress_dims= wandb.config["decompress_dims"],
-                                    l2scale= wandb.config["l2scale"], loss_factor= wandb.config["loss_factor"], learning_rate= wandb.config["learning_rate"],
-                                    epochs= wandb.config["epochs"], batch_size= wandb.config["batch_size"], verbose=True, use_wandb=True)
+    synthesizer = FINDIFFSynthesizer(metadata, cat_embedding_dim= wandb.config["cat_embedding_dim"], mlp_dim= wandb.config["mlp_dim"], mlp_activation= wandb.config["mlp_activation"],
+                                    diffusion_steps= wandb.config["diffusion_steps"], diffusion_beta_start= wandb.config["diffusion_beta_start"], diffusion_beta_end= wandb.config["diffusion_beta_end"],
+                                    mlp_lr=wandb.config["mlp_lr"], epochs= wandb.config["epochs"], batch_size= wandb.config["batch_size"], verbose=True, use_wandb=True)
     synthesizer.fit(data=real_data)
     synthetic_data = synthesizer.sample(num_rows=10000)
     diagnostic_report = run_diagnostic(real_data=real_data, synthetic_data=synthetic_data, metadata=metadata)
