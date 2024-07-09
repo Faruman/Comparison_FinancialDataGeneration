@@ -61,7 +61,7 @@ class JensenShannonDistance():
 
         for col, val in metadata["columns"].items():
             if val["sdtype"] == "categorical":
-                X_gt.value_counts(dropna=False, normalize=self.normalize
+                stats_gt[col], stats_syn[col] = X_gt.value_counts(dropna=False, normalize=self.normalize
                 ).align(
                     X_syn.value_counts(dropna=False, normalize=self.normalize),
                     join="outer",
