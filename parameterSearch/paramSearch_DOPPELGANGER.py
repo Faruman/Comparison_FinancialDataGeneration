@@ -184,4 +184,4 @@ def main():
     wandb.log({**diagnostic_report.get_properties().set_index("Property")["Score"].to_dict(), **quality_report.get_properties().set_index("Property")["Score"].to_dict(), **similarity_report.get_properties().set_index("Property")["Score"].to_dict()})
     wandb.finish()
 
-wandb.agent(sweep_id, function=main, count=50)
+wandb.agent(sweep_id, function=main, count=30)
