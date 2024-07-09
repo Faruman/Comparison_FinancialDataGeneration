@@ -15,7 +15,7 @@ from modified_sitepackages.sdv.evaluation.single_table import run_diagnostic, ev
 import wandb
 
 ## setup wandb
-wandb.login(key= "46ccf115437ee40731bb49ccce1e7d4886329fe4", relogin= True)
+#wandb.login()
 wandb_project = "EvalGenerationAlgorithms_split"
 
 def split_single_transactions(row_sender, sender_column, receiver_column):
@@ -45,6 +45,7 @@ real_data = real_data.drop(columns= ["timeIndicator"])
 metadata = SingleTableMetadata()
 metadata.detect_from_dataframe(real_data)
 metadata.update_column(column_name='isSender', sdtype='boolean')
+metadata.update_column(column_name='Id', sdtype='id')
 
 ## create result df to store values
 result_df = pd.DataFrame(columns= ["Algorithm", "Data Validity", "Data Structure", "Column Shapes", "Column Pair Trends"])
@@ -52,15 +53,15 @@ result_df = pd.DataFrame(columns= ["Algorithm", "Data Validity", "Data Structure
 ## Test WGAN-GP
 wandb.init(project=wandb_project, notes= "Performance Evaluation WGAN-GP", tags= ["WGAN-GP", "Priority3"], entity="financialDataGeneration")
 wandb.config = {"epochs": 500, "batch_size": 5000}
-### Priority 3
+## Priority 3
 synthesizer = WGANGPSynthesizer(metadata, batch_size= wandb.config["batch_size"], epochs= wandb.config["epochs"], verbose= True, use_wandb= True)
 synthesizer.fit(data=real_data)
 synthetic_data = synthesizer.sample(num_rows=500)
-synthetic_data.to_csv("./synth/WGANGP.csv", index=False)
+synthetic_data.to_csv("./synth/WGANGP_split.csv", index=False)
 print(synthetic_data.head())
 diagnostic_report = run_diagnostic(real_data= real_data, synthetic_data= synthetic_data, metadata= metadata)
 quality_report = evaluate_quality(real_data= real_data, synthetic_data= synthetic_data, metadata= metadata)
-wandb.log({**diagnostic_report.get_properties().set_index("Property")["Score"].to_dict(), **quality_report.get_properties().set_index("Property")["Score"].to_dict()})
+wandb.log(diagnostic_report.get_properties().set_index("Property")["Score"].to_dict() | quality_report.get_properties().set_index("Property")["Score"].to_dict())
 report = pd.concat((diagnostic_report.get_properties(), quality_report.get_properties())).transpose()
 report = pd.DataFrame(report.values[1:], columns=report.iloc[0])
 report["Algorithm"] = "WGANGP"
@@ -70,15 +71,15 @@ wandb.finish()
 ## Test WGAN-GP with DRS
 wandb.init(project=wandb_project, notes= "Performance Evaluation WGAN-GP with DRS", tags= ["WGAN-GPwDRS", "Priority1"], entity="financialDataGeneration")
 wandb.config = {"epochs": 500, "batch_size": 5000}
-### Priority 1
+## Priority 1
 synthesizer = WGANGP_DRSSynthesizer(metadata, batch_size= wandb.config["batch_size"], epochs= wandb.config["epochs"], verbose= True, use_wandb= True)
 synthesizer.fit(data=real_data)
 synthetic_data = synthesizer.sample(num_rows=500)
-synthetic_data.to_csv("./synth/WGANGP-DRS.csv", index=False)
+synthetic_data.to_csv("./synth/WGANGP-DRS_split.csv", index=False)
 print(synthetic_data.head())
 diagnostic_report = run_diagnostic(real_data= real_data, synthetic_data= synthetic_data, metadata= metadata)
 quality_report = evaluate_quality(real_data= real_data, synthetic_data= synthetic_data, metadata= metadata)
-wandb.log({**diagnostic_report.get_properties().set_index("Property")["Score"].to_dict(), **quality_report.get_properties().set_index("Property")["Score"].to_dict()})
+wandb.log(diagnostic_report.get_properties().set_index("Property")["Score"].to_dict() | quality_report.get_properties().set_index("Property")["Score"].to_dict())
 report = pd.concat((diagnostic_report.get_properties(), quality_report.get_properties())).transpose()
 report = pd.DataFrame(report.values[1:], columns=report.iloc[0])
 report["Algorithm"] = "WGANGP-DRS"
@@ -88,15 +89,15 @@ wandb.finish()
 ## Test CTGAN
 wandb.init(project=wandb_project, notes= "Performance Evaluation CTGAN", tags= ["CTGAN", "Priority1"], entity="financialDataGeneration")
 wandb.config = {"epochs": 500, "batch_size": 5000}
-### Priority 1
+## Priority 1
 synthesizer = CTGANSynthesizer(metadata, batch_size= wandb.config["batch_size"], epochs= wandb.config["epochs"], verbose= True, use_wandb= True)
 synthesizer.fit(data=real_data)
 synthetic_data = synthesizer.sample(num_rows=500)
-synthetic_data.to_csv("./synth/CTGAN.csv", index=False)
+synthetic_data.to_csv("./synth/CTGAN_split.csv", index=False)
 print(synthetic_data.head())
 diagnostic_report = run_diagnostic(real_data= real_data, synthetic_data= synthetic_data, metadata= metadata)
 quality_report = evaluate_quality(real_data= real_data, synthetic_data= synthetic_data, metadata= metadata)
-wandb.log({**diagnostic_report.get_properties().set_index("Property")["Score"].to_dict(), **quality_report.get_properties().set_index("Property")["Score"].to_dict()})
+wandb.log(diagnostic_report.get_properties().set_index("Property")["Score"].to_dict() | quality_report.get_properties().set_index("Property")["Score"].to_dict())
 report = pd.concat((diagnostic_report.get_properties(), quality_report.get_properties())).transpose()
 report = pd.DataFrame(report.values[1:], columns=report.iloc[0])
 report["Algorithm"] = "CTGAN"
@@ -106,15 +107,15 @@ wandb.finish()
 ## Test TVAE
 wandb.init(project=wandb_project, notes= "Performance Evaluation TVAE", tags= ["TVAE", "Priority1"], entity="financialDataGeneration")
 wandb.config = {"epochs": 500, "batch_size": 5000}
-### Priority 1
+## Priority 1
 synthesizer = TVAESynthesizer(metadata, batch_size= wandb.config["batch_size"], epochs= wandb.config["epochs"], verbose= True, use_wandb= True)
 synthesizer.fit(data=real_data)
 synthetic_data = synthesizer.sample(num_rows=500)
-synthetic_data.to_csv("./synth/TVAE.csv", index=False)
+synthetic_data.to_csv("./synth/TVAE_split.csv", index=False)
 print(synthetic_data.head())
 diagnostic_report = run_diagnostic(real_data= real_data, synthetic_data= synthetic_data, metadata= metadata)
 quality_report = evaluate_quality(real_data= real_data, synthetic_data= synthetic_data, metadata= metadata)
-wandb.log({**diagnostic_report.get_properties().set_index("Property")["Score"].to_dict(), **quality_report.get_properties().set_index("Property")["Score"].to_dict()})
+wandb.log(diagnostic_report.get_properties().set_index("Property")["Score"].to_dict() | quality_report.get_properties().set_index("Property")["Score"].to_dict())
 report = pd.concat((diagnostic_report.get_properties(), quality_report.get_properties())).transpose()
 report = pd.DataFrame(report.values[1:], columns=report.iloc[0])
 report["Algorithm"] = "TVAE"
@@ -124,14 +125,14 @@ wandb.finish()
 ## Test FinDiff
 wandb.init(project=wandb_project, notes= "Performance Evaluation FinDiff", tags= ["FinDiff", "Priority1"], entity="financialDataGeneration")
 wandb.config = {"epochs": 500, "batch_size": 5000}
-### Priority 1
+## Priority 1
 synthesizer = FINDIFFSynthesizer(metadata, batch_size= wandb.config["batch_size"], epochs= wandb.config["epochs"], verbose= True, use_wandb= True)
 synthesizer.fit(data=real_data)
 synthetic_data = synthesizer.sample(num_rows=500)
-synthetic_data.to_csv("./synth/FinDiff.csv", index=False)
+synthetic_data.to_csv("./synth/FinDiff_split.csv", index=False)
 diagnostic_report = run_diagnostic(real_data= real_data, synthetic_data= synthetic_data, metadata= metadata)
 quality_report = evaluate_quality(real_data= real_data, synthetic_data= synthetic_data, metadata= metadata)
-wandb.log({**diagnostic_report.get_properties().set_index("Property")["Score"].to_dict(), **quality_report.get_properties().set_index("Property")["Score"].to_dict()})
+wandb.log(diagnostic_report.get_properties().set_index("Property")["Score"].to_dict() | quality_report.get_properties().set_index("Property")["Score"].to_dict())
 report = pd.concat((diagnostic_report.get_properties(), quality_report.get_properties())).transpose()
 report = pd.DataFrame(report.values[1:], columns=report.iloc[0])
 report["Algorithm"] = "FinDiff"
@@ -174,10 +175,10 @@ wandb.config = {"epochs": 500, "batch_size": 5000}
 synthesizer = DOPPELGANGERSynthesizer(metadata, context_columns= context_columns, max_sequence_len= 30, sample_len= 5, batch_size= wandb.config["batch_size"], epochs= wandb.config["epochs"], verbose= True, use_wandb= True)
 synthesizer.fit(data=real_data)
 synthetic_data = synthesizer.sample(num_rows= 500)
-synthetic_data.to_csv("./synth/DoppelGANger.csv", index=False)
+synthetic_data.to_csv("./synth/DoppelGANger_split.csv", index=False)
 diagnostic_report = run_diagnostic(real_data= real_data, synthetic_data= synthetic_data, metadata= metadata)
 quality_report = evaluate_quality(real_data= real_data, synthetic_data= synthetic_data, metadata= metadata)
-wandb.log({**diagnostic_report.get_properties().set_index("Property")["Score"].to_dict(), **quality_report.get_properties().set_index("Property")["Score"].to_dict()})
+wandb.log(diagnostic_report.get_properties().set_index("Property")["Score"].to_dict() | quality_report.get_properties().set_index("Property")["Score"].to_dict())
 report = pd.concat((diagnostic_report.get_properties(), quality_report.get_properties())).transpose()
 report = pd.DataFrame(report.values[1:], columns=report.iloc[0])
 report["Algorithm"] = "DoppelGANger"
@@ -198,5 +199,5 @@ wandb.finish()
 #report["Algorithm"] = "Banksformer"
 #result_df = pd.concat((result_df, report))
 
-result_df.to_excel("./working/evaluation_results.xlsx")
+result_df.to_excel("./working/evaluation_results_split.xlsx")
 print(result_df)

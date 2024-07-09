@@ -458,20 +458,27 @@ class FINDIFF(BaseSynthesizer):
         train_num_torch = torch.FloatTensor(train_num_scaled)
 
         # scale categorical values
-        self._data_dtypes = train_data.dtypes
-        train_data[self._discrete_columns] = train_data[self._discrete_columns].astype(str)
-        vocabulary_classes = np.unique(train_data[self._discrete_columns])
-        self._label_encoder = LabelEncoder()
-        self._label_encoder.fit(vocabulary_classes)
-        train_cat_scaled = train_data[self._discrete_columns].apply(self._label_encoder.transform)
-        self._vocab_per_attr = {cat_attr: set(train_cat_scaled[cat_attr]) for cat_attr in self._discrete_columns}
-        train_cat_torch = torch.LongTensor(train_cat_scaled.values)
+        if len(self._discrete_columns) > 0:
+            self._data_dtypes = train_data.dtypes
+            train_data[self._discrete_columns] = train_data[self._discrete_columns].astype(str)
+            vocabulary_classes = np.unique(train_data[self._discrete_columns])
+            self._label_encoder = LabelEncoder()
+            self._label_encoder.fit(vocabulary_classes)
+            train_cat_scaled = train_data[self._discrete_columns].apply(self._label_encoder.transform)
+            self._vocab_per_attr = {cat_attr: set(train_cat_scaled[cat_attr]) for cat_attr in self._discrete_columns}
+            train_cat_torch = torch.LongTensor(train_cat_scaled.values)
 
-        # init tensor dataset
-        train_set = TensorDataset(
-            train_cat_torch,  # categorical attributes
-            train_num_torch  # numerical attribute
-        )
+            # init tensor dataset
+            train_set = TensorDataset(
+                train_cat_torch,  # categorical attributes
+                train_num_torch  # numerical attribute
+            )
+
+        else:
+            # init tensor dataset
+            train_set = TensorDataset(
+                train_num_torch  # numerical attribute
+            )
 
         dataloader = DataLoader(
             dataset=train_set,  # training dataset
@@ -479,14 +486,19 @@ class FINDIFF(BaseSynthesizer):
             shuffle=True  # shuffle training data
         )
 
-        # determine number unique categorical tokens
-        n_cat_tokens = len(np.unique(train_data[self._discrete_columns]))
-        # determine total categorical embedding dimension
-        cat_dim = self._cat_embedding_dim * len(self._discrete_columns)
-        # determine total numerical embedding dimension
-        num_dim = len(set(train_data.columns) - set(self._discrete_columns))
-        # determine total embedding dimension
-        self._encoded_dim = cat_dim + num_dim
+        if len(self._discrete_columns) > 0:
+            # determine number unique categorical tokens
+            n_cat_tokens = len(np.unique(train_data[self._discrete_columns]))
+            # determine total categorical embedding dimension
+            cat_dim = self._cat_embedding_dim * len(self._discrete_columns)
+            # determine total numerical embedding dimension
+            num_dim = len(set(train_data.columns) - set(self._discrete_columns))
+            # determine total embedding dimension
+            self._encoded_dim = cat_dim + num_dim
+        else:
+            n_cat_tokens = 0
+            cat_dim = 0
+            self._encoded_dim = len(set(train_data.columns) - set(self._discrete_columns))
 
         self._synthesizer_model = MLPSynthesizer(
             d_in= self._encoded_dim,
@@ -527,40 +539,71 @@ class FINDIFF(BaseSynthesizer):
 
         for i in epoch_iterator:
             batch_losses = []
-            for batch_cat, batch_num in dataloader:
-                # move tensors to device
-                batch_cat = batch_cat.to(self._device)
-                batch_num = batch_num.to(self._device)
 
-                # sample diffusion timestep
-                timesteps = self._diffuser_model.sample_random_timesteps(n=batch_cat.shape[0])
+            if len(self._discrete_columns) > 0:
+                for batch_cat, batch_num in dataloader:
+                    # move tensors to device
+                    batch_cat = batch_cat.to(self._device)
+                    batch_num = batch_num.to(self._device)
 
-                # determine categorical embeddings
-                batch_cat_emb = self._synthesizer_model.embed_categorical(x_cat=batch_cat)
+                    # sample diffusion timestep
+                    timesteps = self._diffuser_model.sample_random_timesteps(n=batch_cat.shape[0])
 
-                # concatenate categorical and numerical embeddings
-                batch_cat_num = torch.cat((batch_cat_emb, batch_num), dim=1)
+                    # determine categorical embeddings
+                    batch_cat_emb = self._synthesizer_model.embed_categorical(x_cat=batch_cat)
 
-                # add diffuser gaussian noise
-                batch_noise_t, noise_t = self._diffuser_model.add_gauss_noise(x_num=batch_cat_num, t=timesteps)
+                    # concatenate categorical and numerical embeddings
+                    batch_cat_num = torch.cat((batch_cat_emb, batch_num), dim=1)
 
-                # conduct synthesizer model forward pass
-                predicted_noise = self._synthesizer_model(x=batch_noise_t, timesteps=timesteps)
+                    # add diffuser gaussian noise
+                    batch_noise_t, noise_t = self._diffuser_model.add_gauss_noise(x_num=batch_cat_num, t=timesteps)
 
-                # compute training batch loss
-                batch_loss = loss_fnc(input=noise_t, target=predicted_noise)
+                    # conduct synthesizer model forward pass
+                    predicted_noise = self._synthesizer_model(x=batch_noise_t, timesteps=timesteps)
 
-                # reset model gradients
-                optimizer.zero_grad()
+                    # compute training batch loss
+                    batch_loss = loss_fnc(input=noise_t, target=predicted_noise)
 
-                # run model backward pass
-                batch_loss.backward()
+                    # reset model gradients
+                    optimizer.zero_grad()
 
-                # optimize model parameters
-                optimizer.step()
+                    # run model backward pass
+                    batch_loss.backward()
 
-                # collect training batch losses
-                batch_losses.append(batch_loss.detach().cpu().numpy())
+                    # optimize model parameters
+                    optimizer.step()
+
+                    # collect training batch losses
+                    batch_losses.append(batch_loss.detach().cpu().numpy())
+
+            else:
+                for batch_num in dataloader:
+                    # move tensors to device
+                    batch_num = batch_num[0].to(self._device)
+
+                    # sample diffusion timestep
+                    timesteps = self._diffuser_model.sample_random_timesteps(n=batch_num.shape[0])
+
+                    # add diffuser gaussian noise
+                    batch_noise_t, noise_t = self._diffuser_model.add_gauss_noise(x_num=batch_num, t=timesteps)
+
+                    # conduct synthesizer model forward pass
+                    predicted_noise = self._synthesizer_model(x=batch_noise_t, timesteps=timesteps)
+
+                    # compute training batch loss
+                    batch_loss = loss_fnc(input=noise_t, target=predicted_noise)
+
+                    # reset model gradients
+                    optimizer.zero_grad()
+
+                    # run model backward pass
+                    batch_loss.backward()
+
+                    # optimize model parameters
+                    optimizer.step()
+
+                    # collect training batch losses
+                    batch_losses.append(batch_loss.detach().cpu().numpy())
 
             # determine mean training epoch loss
             batch_losses_mean = np.mean(np.array(batch_losses))

@@ -8,3 +8,4 @@ torch == 2.3.1
 openpyxl == 3.1.5
 wandb==0.17.4
 stellargraph==1.2.1
+chardet==5.2.0
