@@ -28,8 +28,9 @@ import wandb
 
 
 ## setup wandb
-wandb.login(key= "46ccf115437ee40731bb49ccce1e7d4886329fe4", relogin= True)
+#wandb.login()
 wandb_project = "EvalGenerationAlgorithms_graph"
+
 min_number_edges_per_node = 2
 embedding_generator = "watchyourstep"
 embedding_dim = 5
@@ -187,9 +188,9 @@ synthesizer = FINDIFFSynthesizer(metadata, batch_size= wandb.config["batch_size"
 synthesizer.fit(data=real_data)
 synthetic_data = synthesizer.sample(num_rows=500)
 synthetic_data.to_csv("./synth/FinDiff.csv", index=False)
-wandb.log(diagnostic_report.get_properties().set_index("Property")["Score"].to_dict() | quality_report.get_properties().set_index("Property")["Score"].to_dict())
 diagnostic_report = run_diagnostic(real_data= real_data, synthetic_data= synthetic_data, metadata= metadata)
 quality_report = evaluate_quality(real_data= real_data, synthetic_data= synthetic_data, metadata= metadata)
+wandb.log(diagnostic_report.get_properties().set_index("Property")["Score"].to_dict() | quality_report.get_properties().set_index("Property")["Score"].to_dict())
 report = pd.concat((diagnostic_report.get_properties(), quality_report.get_properties())).transpose()
 report = pd.DataFrame(report.values[1:], columns=report.iloc[0])
 report["Algorithm"] = "FinDiff"
@@ -240,9 +241,9 @@ synthesizer = DOPPELGANGERSynthesizer(metadata, context_columns= context_columns
 synthesizer.fit(data=real_data)
 synthetic_data = synthesizer.sample(num_rows= 500)
 synthetic_data.to_csv("./synth/DoppelGANger.csv", index=False)
-wandb.log(diagnostic_report.get_properties().set_index("Property")["Score"].to_dict() | quality_report.get_properties().set_index("Property")["Score"].to_dict())
 diagnostic_report = run_diagnostic(real_data= real_data, synthetic_data= synthetic_data, metadata= metadata)
 quality_report = evaluate_quality(real_data= real_data, synthetic_data= synthetic_data, metadata= metadata)
+wandb.log(diagnostic_report.get_properties().set_index("Property")["Score"].to_dict() | quality_report.get_properties().set_index("Property")["Score"].to_dict())
 report = pd.concat((diagnostic_report.get_properties(), quality_report.get_properties())).transpose()
 report = pd.DataFrame(report.values[1:], columns=report.iloc[0])
 report["Algorithm"] = "DoppelGANger"
