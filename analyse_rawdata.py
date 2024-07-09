@@ -6,6 +6,9 @@ from matplotlib import pyplot as plt
 
 import networkx as nx
 
+from modified_sitepackages.clusteringMethods.methods import agglomerative, kMeans
+from modified_sitepackages.clusteringMethods.meta import dualClustering
+from sklearn.preprocessing import StandardScaler
 
 df = pd.read_csv("./data/transformed_pca_extd_df.csv")
 df = df.rename(columns={"Unnamed: 0": "datetimeIndicator"})
@@ -41,3 +44,9 @@ plt.title("Analysis of Graph Structure")
 nx.draw(G_draw, width=edge_weight, node_size=5, with_labels= False)
 plt.savefig("./data/plots/networkGraph.png")
 plt.show()
+
+# find optimal cluster number
+cl_data = StandardScaler().fit_transform(df.drop(["source_id", "target_id"], axis=1))
+cl = dualClustering(preperation_method= agglomerative(num_cluster_range= range(3, 30)), clustering_method= kMeans())
+cl.fit(cl_data)
+print("Number of Clusters: {}".format(cl.num_clusters))

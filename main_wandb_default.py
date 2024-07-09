@@ -6,6 +6,8 @@ tqdm.pandas()
 
 from sdv.metadata import SingleTableMetadata
 
+from sklearn.cluster import KMeans
+from sklearn.preprocessing import StandardScaler
 
 from modified_sitepackages.sdv.sequential import PARSynthesizer, DOPPELGANGERSynthesizer, BANKSFORMERSynthesizer
 from modified_sitepackages.sdv.single_table import CTGANSynthesizer, TVAESynthesizer, WGANGPSynthesizer, WGANGP_DRSSynthesizer, FINDIFFSynthesizer
@@ -18,14 +20,29 @@ import wandb
 wandb.login(key= "46ccf115437ee40731bb49ccce1e7d4886329fe4", relogin= True)
 wandb_project = "EvalGenerationAlgorithms_default"
 
-## load data
-real_data = pd.read_csv("./data/transformed_pca_extd_df.csv", index_col=0)
-real_data = real_data.reset_index()
-real_data["index"] = pd.to_numeric(real_data["index"]).astype(int)
-real_data = real_data.rename(columns={"index": "timeIndicator"})
-real_data["source_id"] = real_data["source_id"].astype(int).astype(str)
-real_data["target_id"] = real_data["target_id"].astype(int).astype(str)
+add_transaction_clusters = True
 
+## load data
+if not os.path.exists("./working/transformed_pca_extd_df_graph.csv"):
+    real_data = pd.read_csv("./data/transformed_pca_extd_df.csv", index_col=0)
+    real_data = real_data.reset_index()
+    real_data["index"] = pd.to_numeric(real_data["index"]).astype(int)
+    real_data = real_data.rename(columns={"index": "timeIndicator"})
+    real_data["source_id"] = real_data["source_id"].astype(int).astype(str)
+    real_data["target_id"] = real_data["target_id"].astype(int).astype(str)
+
+    if add_transaction_clusters:
+        if real_data.shape[0] > 500000:
+            cl_data = StandardScaler().fit_transform(real_data.drop(["source_id", "target_id"], axis=1).sample(100000))
+        else:
+            cl_data = StandardScaler().fit_transform(real_data.drop(["source_id", "target_id"], axis=1))
+        cl = KMeans(n_clusters=10)
+        real_data["transaction_clusters"] = cl.fit_predict(cl_data)
+        # print(len(set(cl.labels_)) - (1 if -1 in cl.labels_ else 0))
+
+    real_data.to_csv("./working/transformed_pca_extd_df_default.csv", index=False)
+
+real_data = pd.read_csv("./working/transformed_pca_extd_df_default.csv")
 real_data = real_data.drop(columns= ["timeIndicator"])
 metadata = SingleTableMetadata()
 metadata.detect_from_dataframe(real_data)
@@ -126,12 +143,7 @@ wandb.finish()
 
 
 ## load data
-real_data = pd.read_csv("./data/transformed_pca_extd_df.csv", index_col=0)
-real_data = real_data.reset_index()
-real_data["index"] = pd.to_numeric(real_data["index"]).astype(int)
-real_data = real_data.rename(columns={"index": "timeIndicator"})
-real_data["source_id"] = real_data["source_id"].astype(int).astype(str)
-real_data["target_id"] = real_data["target_id"].astype(int).astype(str)
+real_data = pd.read_csv("./working/transformed_pca_extd_df_default.csv")
 
 metadata = SingleTableMetadata()
 metadata.detect_from_dataframe(real_data)

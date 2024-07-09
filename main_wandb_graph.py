@@ -17,6 +17,9 @@ from stellargraph.utils import plot_history
 
 from sklearn.decomposition import PCA
 
+from sklearn.cluster import KMeans
+from sklearn.preprocessing import StandardScaler
+
 from tensorflow.keras import Model, regularizers
 import tensorflow as tf
 
@@ -35,12 +38,25 @@ min_number_edges_per_node = 2
 embedding_generator = "watchyourstep"
 embedding_dim = 5
 
+add_transaction_clusters = True
+
 ## replace source_id and target_id with graph structure of ids
 if not os.path.exists("./working/transformed_pca_extd_df_graph.csv"):
     real_data = pd.read_csv("./data/transformed_pca_extd_df.csv", index_col=0)
     real_data = real_data.reset_index()
     real_data["index"] = pd.to_numeric(real_data["index"]).astype(int)
     real_data = real_data.rename(columns={"index": "timeIndicator"})
+
+    real_data = real_data.sample(5000)
+
+    if add_transaction_clusters:
+        if real_data.shape[0] > 500000:
+            cl_data = StandardScaler().fit_transform(real_data.drop(["source_id", "target_id"], axis=1).sample(100000))
+        else:
+            cl_data = StandardScaler().fit_transform(real_data.drop(["source_id", "target_id"], axis=1))
+        cl = KMeans(n_clusters=10)
+        real_data["transaction_clusters"] = cl.fit_predict(cl_data)
+        #print(len(set(cl.labels_)) - (1 if -1 in cl.labels_ else 0))
 
     G = nx.DiGraph()
     edgelist = real_data.loc[real_data["source_id"] != real_data["target_id"]].groupby(by=["source_id", "target_id"])["timeIndicator"].count().reset_index()

@@ -6,6 +6,8 @@ tqdm.pandas()
 
 from sdv.metadata import SingleTableMetadata
 
+from sklearn.cluster import KMeans
+from sklearn.preprocessing import StandardScaler
 
 from modified_sitepackages.sdv.sequential import PARSynthesizer, DOPPELGANGERSynthesizer, BANKSFORMERSynthesizer
 from modified_sitepackages.sdv.single_table import CTGANSynthesizer, TVAESynthesizer, WGANGPSynthesizer, WGANGP_DRSSynthesizer, FINDIFFSynthesizer
@@ -17,6 +19,8 @@ import wandb
 ## setup wandb
 #wandb.login()
 wandb_project = "EvalGenerationAlgorithms_split"
+
+add_transaction_clusters = True
 
 def split_single_transactions(row_sender, sender_column, receiver_column):
     row_receiver = row_sender.copy()
@@ -34,6 +38,16 @@ if not os.path.exists("./working/transformed_pca_extd_df_split.csv"):
     real_data = real_data.reset_index()
     real_data["index"] = pd.to_numeric(real_data["index"]).astype(int)
     real_data = real_data.rename(columns={"index": "timeIndicator"})
+
+    if add_transaction_clusters:
+        if real_data.shape[0] > 500000:
+            cl_data = StandardScaler().fit_transform(real_data.drop(["source_id", "target_id"], axis=1).sample(100000))
+        else:
+            cl_data = StandardScaler().fit_transform(real_data.drop(["source_id", "target_id"], axis=1))
+        cl = KMeans(n_clusters=10)
+        real_data["transaction_clusters"] = cl.fit_predict(cl_data)
+        # print(len(set(cl.labels_)) - (1 if -1 in cl.labels_ else 0))
+
     real_data = real_data.progress_apply(lambda row: split_single_transactions(row, "source_id", "target_id"), axis=1)
     real_data = pd.concat(real_data.to_list()).reset_index(drop=True)
     real_data["Id"] = real_data["Id"].astype(int).astype(str)

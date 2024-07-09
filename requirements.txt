@@ -9,3 +9,8 @@ openpyxl == 3.1.5
 wandb==0.17.4
 stellargraph==1.2.1
 chardet==5.2.0
+c_index==0.0.2
+kneed==0.8.5
+k_means_constrained==0.7.3
+kmodes==0.12.2
+bitarray==2.9.2
