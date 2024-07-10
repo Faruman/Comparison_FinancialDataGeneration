@@ -108,19 +108,22 @@ if not os.path.exists("../working/transformed_pca_extd_df_graph.csv"):
     real_data.to_csv("../working/transformed_pca_extd_df_graph.csv", index=False)
 
 ## load data
-real_data = pd.read_csv("-./working/transformed_pca_extd_df_graph.csv")
+real_data = pd.read_csv("../working/transformed_pca_extd_df_graph.csv")
 real_data = real_data.drop(columns=["target_id"])
 
 metadata = SingleTableMetadata()
 metadata.detect_from_dataframe(real_data)
 metadata.update_column(column_name='source_id', sdtype='id')
+metadata.update_column(column_name='timeIndicator', sdtype='numerical')
 metadata.set_sequence_key(column_name='source_id')
 metadata.set_sequence_index(column_name='timeIndicator')
+metadata.set_primary_key(None)
 context_columns= [f"source_id_{i}" for i in range(embedding_dim)]
 
 ## Truncate sequences
 def truncate_sequence(group, max_len, min_len, id_column):
     if len(group) <= max_len and len(group) >= min_len:
+        group[id_column] = group[id_column].apply(lambda x: f"{x}_0")
         return group
     elif len(group) > max_len:
         out = pd.DataFrame(columns=group.columns)
@@ -135,7 +138,7 @@ def truncate_sequence(group, max_len, min_len, id_column):
         return out
     else:
         return pd.DataFrame(columns=group.columns)
-real_data = real_data.groupby("source_id").progress_apply(truncate_sequence, max_len= 30, min_len= 2, id_column= "source_id").reset_index(drop=True)
+real_data = real_data.groupby(["source_id"] + context_columns).progress_apply(truncate_sequence, max_len= 30, min_len= 2, id_column= "source_id").reset_index(drop=True)
 
 ## Test CTGAN
 sweep_config = {
@@ -152,13 +155,13 @@ sweep_config = {
         "feature_num_units": {"min": 128, "max": 512},
         "gradient_penalty_coef": {"min": 3.0, "max": 21.0},
         "attribute_gradient_penalty_coef": {"min": 3.0, "max": 21.0},
-        "attribute_loss_coef": {"min": 0.5, "max": 5},
+        "attribute_loss_coef": {"min": 0.5, "max": 5.0},
         "generator_learning_rate": {"min": 0.00001, "max": 0.01},
-        "generator_beta1": {"min": 0.2, "max": 1},
+        "generator_beta1": {"min": 0.2, "max": 1.0},
         "discriminator_learning_rate": {"min": 0.00001, "max": 0.01},
-        "discriminator_beta1": {"min": 0.2, "max": 1},
+        "discriminator_beta1": {"min": 0.2, "max": 1.0},
         "attribute_discriminator_learning_rate": {"min": 0.00001, "max": 0.01},
-        "attribute_discriminator_beta1": {"min": 0.2, "max": 1},
+        "attribute_discriminator_beta1": {"min": 0.2, "max": 1.0},
         "discriminator_rounds": {"min": 1, "max": 10},
         "generator_rounds": {"min": 1, "max": 10},
         "epochs": {"min": 100, "max": 1000},
