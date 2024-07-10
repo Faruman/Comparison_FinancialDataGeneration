@@ -136,11 +136,11 @@ sweep_config = {
     },
 }
 #sweep_id = wandb.sweep(sweep=sweep_config, project="FinancialDataGeneration_FINDIFF_ParamSearch", entity="financialDataGeneration")
-sweep_id = "rylaiavt"
+sweep_id = "financialDataGeneration/FinancialDataGeneration_FINDIFF_ParamSearch/rylaiavt"
 
 ### Priority 1
 def main():
-    wandb.init(project="FinancialDataGeneration_ParamSearch", entity="financialDataGeneration")
+    wandb.init(project="FinancialDataGeneration_FINDIFF_ParamSearch", entity="financialDataGeneration")
     synthesizer = FINDIFFSynthesizer(metadata, cat_embedding_dim= wandb.config["cat_embedding_dim"], mlp_dim= wandb.config["mlp_dim"], mlp_activation= wandb.config["mlp_activation"],
                                     diffusion_steps= wandb.config["diffusion_steps"], diffusion_beta_start= wandb.config["diffusion_beta_start"], diffusion_beta_end= wandb.config["diffusion_beta_end"],
                                     mlp_lr=wandb.config["mlp_lr"], epochs= wandb.config["epochs"], batch_size= wandb.config["batch_size"], verbose=True, use_wandb=True)

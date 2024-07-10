@@ -135,11 +135,11 @@ sweep_config = {
     },
 }
 #sweep_id = wandb.sweep(sweep=sweep_config, project="FinancialDataGeneration_TVAE_ParamSearch", entity="financialDataGeneration")
-sweep_id = "bh90ig0h"
+sweep_id = "financialDataGeneration/FinancialDataGeneration_TVAE_ParamSearch/bh90ig0h"
 
 ### Priority 1
 def main():
-    wandb.init(project="FinancialDataGeneration_ParamSearch", entity="financialDataGeneration")
+    wandb.init(project="FinancialDataGeneration_TVAE_ParamSearch", entity="financialDataGeneration")
     synthesizer = TVAESynthesizer(metadata, embedding_dim= wandb.config["embedding_dim"], compress_dims= wandb.config["compress_dims"], decompress_dims= wandb.config["decompress_dims"],
                                     l2scale= wandb.config["l2scale"], loss_factor= wandb.config["loss_factor"], learning_rate= wandb.config["learning_rate"],
                                     epochs= wandb.config["epochs"], batch_size= wandb.config["batch_size"], verbose=True, use_wandb=True)

@@ -140,11 +140,11 @@ sweep_config = {
     },
 }
 #sweep_id = wandb.sweep(sweep=sweep_config, project="FinancialDataGeneration_WGANGPwDRS_ParamSearch", entity="financialDataGeneration")
-sweep_id = "6a0f59c0"
+sweep_id = "financialDataGeneration/FinancialDataGeneration_WGANGPwDRS_ParamSearch/6a0f59c0"
 
 ### Priority 1
 def main():
-    wandb.init(project="FinancialDataGeneration_ParamSearch", entity="financialDataGeneration")
+    wandb.init(project="FinancialDataGeneration_WGANGPwDRS_ParamSearch", entity="financialDataGeneration")
     synthesizer = WGANGP_DRSSynthesizer(metadata, embedding_dim= wandb.config["embedding_dim"], generator_dim= wandb.config["generator_dim"], discriminator_dim= wandb.config["discriminator_dim"],
                                     generator_lr= wandb.config["generator_lr"], generator_decay= wandb.config["generator_decay"], discriminator_lr= wandb.config["discriminator_lr"], discriminator_decay= wandb.config["discriminator_decay"], batch_size= wandb.config["batch_size"],
                                     epochs= wandb.config["epochs"], discriminator_steps= wandb.config["discriminator_steps"], pac= wandb.config["pac"], dsr_epsilon= wandb.config["dsr_epsilon"], dsr_gamma_percentile= 0.80, verbose=True, use_wandb=True)
