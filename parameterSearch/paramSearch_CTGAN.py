@@ -133,7 +133,7 @@ sweep_config = {
         "discriminator_decay": {"min": 0.0, "max": 0.05},
         "discriminator_steps": {"min": 1, "max": 15},
         "epochs": {"min": 100, "max": 1000},
-        "pac": {"min": 1, "max": 20},
+        "pac": {"values": [1, 2, 4, 8, 10, 20]},
         "batch_size": {"values": [5000]}
     },
 }
