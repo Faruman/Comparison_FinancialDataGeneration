@@ -224,6 +224,7 @@ real_data = real_data.drop(columns=["target_id"])
 metadata = SingleTableMetadata()
 metadata.detect_from_dataframe(real_data)
 metadata.update_column(column_name='source_id', sdtype='id')
+metadata.update_column(column_name='timeIndicator', sdtype='numerical')
 metadata.set_sequence_key(column_name='source_id')
 metadata.set_sequence_index(column_name='timeIndicator')
 context_columns= [f"source_id_{i}" for i in range(embedding_dim)]

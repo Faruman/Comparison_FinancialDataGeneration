@@ -120,6 +120,7 @@ metadata.set_sequence_index(column_name='timeIndicator')
 metadata.set_primary_key(None)
 context_columns= [f"source_id_{i}" for i in range(embedding_dim)]
 
+
 ## Truncate sequences
 def truncate_sequence(group, max_len, min_len, id_column):
     if len(group) <= max_len and len(group) >= min_len:
@@ -147,20 +148,20 @@ sweep_config = {
     "metric": {"goal": "minimize", "name": "Jensen Shannon Distance"},
     "parameters": {
         "sample_len": {"values": [3, 5, 10, 15]},
-        "attribute_noise_dim": {"min": 5, "max": 30},
-        "feature_noise_dim": {"min": 5, "max": 30},
-        "attribute_num_layers": {"min": 2, "max": 6},
+        "attribute_noise_dim": {"min": 5, "max": 15},
+        "feature_noise_dim": {"min": 5, "max": 15},
+        "attribute_num_layers": {"min": 2, "max": 5},
         "attribute_num_units": {"min": 128, "max": 512},
-        "feature_num_layers": {"min": 2, "max": 6},
+        "feature_num_layers": {"min": 2, "max": 5},
         "feature_num_units": {"min": 128, "max": 512},
-        "gradient_penalty_coef": {"min": 3.0, "max": 21.0},
-        "attribute_gradient_penalty_coef": {"min": 3.0, "max": 21.0},
-        "attribute_loss_coef": {"min": 0.5, "max": 5.0},
-        "generator_learning_rate": {"min": 0.00001, "max": 0.01},
+        "gradient_penalty_coef": {"min": 5.0, "max": 15.0},
+        "attribute_gradient_penalty_coef": {"min": 5.0, "max": 15.0},
+        "attribute_loss_coef": {"min": 0.5, "max": 3.0},
+        "generator_learning_rate": {"min": 0.00001, "max": 0.005},
         "generator_beta1": {"min": 0.2, "max": 1.0},
-        "discriminator_learning_rate": {"min": 0.00001, "max": 0.01},
+        "discriminator_learning_rate": {"min": 0.00001, "max": 0.005},
         "discriminator_beta1": {"min": 0.2, "max": 1.0},
-        "attribute_discriminator_learning_rate": {"min": 0.00001, "max": 0.01},
+        "attribute_discriminator_learning_rate": {"min": 0.00001, "max": 0.005},
         "attribute_discriminator_beta1": {"min": 0.2, "max": 1.0},
         "discriminator_rounds": {"min": 1, "max": 10},
         "epochs": {"min": 100, "max": 1000},

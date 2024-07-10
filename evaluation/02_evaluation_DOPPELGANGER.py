@@ -23,7 +23,7 @@ from sklearn.preprocessing import StandardScaler
 from tensorflow.keras import Model, regularizers
 import tensorflow as tf
 
-from modified_sitepackages.sdv.single_table import CTGANSynthesizer
+from modified_sitepackages.sdv.sequential import DOPPELGANGERSynthesizer
 
 from modified_sitepackages.sdv.evaluation.single_table import run_diagnostic, evaluate_quality, evaluate_similarity
 
@@ -31,7 +31,7 @@ import wandb
 
 ## setup wandb
 #wandb.login()
-wandb_project = "EvalGenerationAlgorithms_graph"
+wandb_project = "FinancialDataGeneration_DOPPELGANGER_Evaluation"
 
 min_number_edges_per_node = 2
 embedding_generator = "watchyourstep"
@@ -39,9 +39,11 @@ embedding_dim = 5
 
 add_transaction_clusters = True
 
+data_path = "../data/transformed_pca_extd_df.csv"
+
 ## replace source_id and target_id with graph structure of ids
 if not os.path.exists("../working/transformed_pca_extd_df_graph.csv"):
-    real_data = pd.read_csv("../data/transformed_pca_extd_df.csv", index_col=0)
+    real_data = pd.read_csv(data_path, index_col=0)
     real_data = real_data.reset_index()
     real_data["index"] = pd.to_numeric(real_data["index"]).astype(int)
     real_data = real_data.rename(columns={"index": "timeIndicator"})
@@ -107,50 +109,53 @@ if not os.path.exists("../working/transformed_pca_extd_df_graph.csv"):
 
     real_data.to_csv("../working/transformed_pca_extd_df_graph.csv", index=False)
 
+## load data
 real_data = pd.read_csv("../working/transformed_pca_extd_df_graph.csv")
-real_data = real_data.reset_index()
-real_data["index"] = pd.to_numeric(real_data["index"]).astype(int)
-real_data = real_data.rename(columns={"index": "timeIndicator"})
-
-real_data = real_data.drop(columns= ["timeIndicator"])
-real_data = real_data.drop(columns=["source_id", "target_id"])
+real_data = real_data.drop(columns=["target_id"])
 
 metadata = SingleTableMetadata()
 metadata.detect_from_dataframe(real_data)
+metadata.update_column(column_name='source_id', sdtype='id')
+metadata.update_column(column_name='timeIndicator', sdtype='numerical')
+metadata.set_sequence_key(column_name='source_id')
+metadata.set_sequence_index(column_name='timeIndicator')
+metadata.set_primary_key(None)
+context_columns= [f"source_id_{i}" for i in range(embedding_dim)]
+
+
+## Truncate sequences
+def truncate_sequence(group, max_len, min_len, id_column):
+    if len(group) <= max_len and len(group) >= min_len:
+        group[id_column] = group[id_column].apply(lambda x: f"{x}_0")
+        return group
+    elif len(group) > max_len:
+        out = pd.DataFrame(columns=group.columns)
+        for i in range(len(group) // max_len):
+            seq = group.sample(min(len(group), max_len))
+            seq[id_column] = seq[id_column].apply(lambda x: f"{x}_{i}")
+            if out.empty:
+                out = seq
+            else:
+                out = pd.concat((out, seq))
+            group = group.drop(seq.index)
+        return out
+    else:
+        return pd.DataFrame(columns=group.columns)
+real_data = real_data.groupby(["source_id"] + context_columns).progress_apply(truncate_sequence, max_len= 30, min_len= min_number_edges_per_node, id_column= "source_id").reset_index(drop=True)
 
 ## Test CTGAN
-sweep_config = {
-    "name": "Param Search",
-    "method": "bayes",
-    "metric": {"goal": "minimize", "name": "Jensen Shannon Distance"},
-    "parameters": {
-        "embedding_dim": {"values": [32, 64, 256]},
-        "generator_dim": {"values": [(128, 128), (256, 256), (512, 512)]},
-        "discriminator_dim": {"values": [(128, 128), (256, 256), (512, 512)]},
-        "generator_lr": {"min": 0.00001, "max": 0.001},
-        "generator_decay": {"min": 0.0, "max": 0.05},
-        "discriminator_lr": {"min": 0.00001, "max": 0.001},
-        "discriminator_decay": {"min": 0.0, "max": 0.05},
-        "discriminator_steps": {"min": 1, "max": 15},
-        "epochs": {"min": 100, "max": 1000},
-        "pac": {"values": [1, 2, 4, 8, 10, 20]},
-        "batch_size": {"values": [5000]}
-    },
-}
-sweep_id = wandb.sweep(sweep=sweep_config, project="FinancialDataGeneration_CTGAN_ParamSearch", entity="financialDataGeneration")
-
 ### Priority 1
-def main():
-    wandb.init(project="FinancialDataGeneration_CTGAN_ParamSearch", entity="financialDataGeneration")
-    synthesizer = CTGANSynthesizer(metadata, embedding_dim= wandb.config["embedding_dim"], generator_dim= wandb.config["generator_dim"], discriminator_dim= wandb.config["discriminator_dim"],
-                                    generator_lr= wandb.config["generator_lr"], generator_decay= wandb.config["generator_decay"], discriminator_lr= wandb.config["discriminator_lr"], discriminator_decay= wandb.config["discriminator_decay"], batch_size= wandb.config["batch_size"],
-                                    epochs= wandb.config["epochs"], discriminator_steps= wandb.config["discriminator_steps"], pac= wandb.config["pac"], verbose=True, use_wandb=True)
-    synthesizer.fit(data=real_data)
-    synthetic_data = synthesizer.sample(num_rows=10000)
-    diagnostic_report = run_diagnostic(real_data=real_data, synthetic_data=synthetic_data, metadata=metadata)
-    quality_report = evaluate_quality(real_data=real_data, synthetic_data=synthetic_data, metadata=metadata)
-    similarity_report = evaluate_similarity(real_data= real_data, synthetic_data= synthetic_data, metadata= metadata)
-    wandb.log({**diagnostic_report.get_properties().set_index("Property")["Score"].to_dict(), **quality_report.get_properties().set_index("Property")["Score"].to_dict(), **similarity_report.get_properties().set_index("Property")["Score"].to_dict()})
-    wandb.finish()
-
-wandb.agent(sweep_id, function=main, count=30)
+wandb.init(project=wandb_project, entity="financialDataGeneration")
+synthesizer = DOPPELGANGERSynthesizer(metadata, context_columns= context_columns, max_sequence_len= 30, sample_len= 10, feature_noise_dim = 11, attribute_num_layers = 3,
+                                      attribute_num_units = 139, feature_num_layers = 5, feature_num_units = 287, gradient_penalty_coef = 9.035,
+                                      attribute_gradient_penalty_coef = 8.21, attribute_loss_coef = 2.048, generator_learning_rate = 0.001833, generator_beta1 = 0.3226,
+                                      discriminator_learning_rate = 0.002267, discriminator_beta1 = 0.5658, attribute_discriminator_learning_rate = 0.000199,
+                                      attribute_discriminator_beta1 = 0.3048, discriminator_rounds = 2, batch_size= 5000,
+                                      epochs= 575, verbose= True, use_wandb= True)
+synthesizer.fit(data=real_data)
+synthetic_data = synthesizer.sample(num_rows=10000)
+diagnostic_report = run_diagnostic(real_data=real_data, synthetic_data=synthetic_data, metadata=metadata)
+quality_report = evaluate_quality(real_data=real_data, synthetic_data=synthetic_data, metadata=metadata)
+similarity_report = evaluate_similarity(real_data= real_data, synthetic_data= synthetic_data, metadata= metadata)
+wandb.log({**diagnostic_report.get_properties().set_index("Property")["Score"].to_dict(), **quality_report.get_properties().set_index("Property")["Score"].to_dict(), **similarity_report.get_properties().set_index("Property")["Score"].to_dict()})
+wandb.finish()
