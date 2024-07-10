@@ -98,7 +98,7 @@ if not os.path.exists("../working/transformed_pca_extd_df_graph.csv"):
     # print(pca.explained_variance_ratio_)
     embeddings_dict = dict(zip(S.nodes(), embeddings))
 
-    real_data = real_data.loc[real_data["source_id"].isin(S.nodes()) & real_data["target_id"].isin(S.nodes())]
+    real_data = real_data.loc[real_data["source_id"].isin(S.nodes()) & real_data["target_id"].isin(S.nodes())].reset_index(drop= True)
     source_embeddings = pd.DataFrame(real_data["source_id"].progress_apply(lambda x: embeddings_dict[x]).to_list())
     source_embeddings.columns = [f"source_id_{i}" for i in range(embedding_dim)]
     target_embeddings = pd.DataFrame(real_data["target_id"].progress_apply(lambda x: embeddings_dict[x]).to_list())
