@@ -163,7 +163,6 @@ sweep_config = {
         "attribute_discriminator_learning_rate": {"min": 0.00001, "max": 0.01},
         "attribute_discriminator_beta1": {"min": 0.2, "max": 1.0},
         "discriminator_rounds": {"min": 1, "max": 10},
-        "generator_rounds": {"min": 1, "max": 10},
         "epochs": {"min": 100, "max": 1000},
         "batch_size": {"values": [5000]}
     },
@@ -177,7 +176,7 @@ def main():
                                           attribute_num_units = wandb.config["attribute_num_units"], feature_num_layers = wandb.config["feature_num_layers"], feature_num_units = wandb.config["feature_num_units"], gradient_penalty_coef = wandb.config["gradient_penalty_coef"],
                                           attribute_gradient_penalty_coef = wandb.config["attribute_gradient_penalty_coef"], attribute_loss_coef = wandb.config["attribute_loss_coef"], generator_learning_rate = wandb.config["generator_learning_rate"], generator_beta1 = wandb.config["generator_beta1"],
                                           discriminator_learning_rate = wandb.config["discriminator_learning_rate"], discriminator_beta1 = wandb.config["discriminator_beta1"], attribute_discriminator_learning_rate = wandb.config["attribute_discriminator_learning_rate"],
-                                          attribute_discriminator_beta1 = wandb.config["attribute_discriminator_beta1"], discriminator_rounds = wandb.config["discriminator_rounds"], generator_rounds = wandb.config["generator_rounds"], batch_size= wandb.config["batch_size"],
+                                          attribute_discriminator_beta1 = wandb.config["attribute_discriminator_beta1"], discriminator_rounds = wandb.config["discriminator_rounds"], batch_size= wandb.config["batch_size"],
                                           epochs= wandb.config["epochs"], verbose= True, use_wandb= True)
     synthesizer.fit(data=real_data)
     synthetic_data = synthesizer.sample(num_rows=10000)
