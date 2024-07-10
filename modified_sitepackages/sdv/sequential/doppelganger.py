@@ -2425,8 +2425,8 @@ class DGAN:
         Returns:
             Output for GAN attribute discriminator.
         """
-        #batch = [index for index in batch if not torch.isnan(index).any()]
-        batch = [torch.nan_to_num(index) for index in batch]
+        batch = [index for index in batch if not torch.isnan(index).any()]
+        #batch = [torch.nan_to_num(index) for index in batch]
 
         if not self.attribute_discriminator:
             raise InternalError(
