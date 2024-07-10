@@ -135,7 +135,8 @@ sweep_config = {
         "batch_size": {"values": [5000]}
     },
 }
-sweep_id = wandb.sweep(sweep=sweep_config, project="FinancialDataGeneration_FINDIFF_ParamSearch", entity="financialDataGeneration")
+#sweep_id = wandb.sweep(sweep=sweep_config, project="FinancialDataGeneration_FINDIFF_ParamSearch", entity="financialDataGeneration")
+sweep_id = "rylaiavt"
 
 ### Priority 1
 def main():

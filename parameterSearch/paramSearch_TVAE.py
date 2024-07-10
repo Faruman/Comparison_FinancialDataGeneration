@@ -134,7 +134,8 @@ sweep_config = {
         "batch_size": {"values": [5000]}
     },
 }
-sweep_id = wandb.sweep(sweep=sweep_config, project="FinancialDataGeneration_TVAE_ParamSearch", entity="financialDataGeneration")
+#sweep_id = wandb.sweep(sweep=sweep_config, project="FinancialDataGeneration_TVAE_ParamSearch", entity="financialDataGeneration")
+sweep_id = "bh90ig0h"
 
 ### Priority 1
 def main():
