@@ -119,15 +119,19 @@ real_data = real_data.drop(columns=["source_id", "target_id"])
 
 metadata = SingleTableMetadata()
 metadata.detect_from_dataframe(real_data)
+metadata.save_to_json("../working/transformed_pca_extd_df_grap_metadata_table.json")
 
-## Test CTGAN
+## Test TVAE
 ### Priority 1
 wandb.init(project=wandb_project, entity="financialDataGeneration")
 synthesizer = TVAESynthesizer(metadata, embedding_dim= 32, compress_dims= [512,512], decompress_dims= [128,128],
                                 l2scale= 0.0006256, loss_factor= 1, learning_rate= 0.0006903,
                                 epochs= 544, batch_size= 5000, verbose=True, use_wandb=True)
 synthesizer.fit(data=real_data)
+synthesizer.save("../model/TVAE.pkl")
+synthesizer.load("../model/TVAE.pkl")
 synthetic_data = synthesizer.sample(num_rows=10000)
+synthetic_data.to_csv("../synth/TVAE_synthetic_data.csv", index=False)
 diagnostic_report = run_diagnostic(real_data=real_data, synthetic_data=synthetic_data, metadata=metadata)
 quality_report = evaluate_quality(real_data=real_data, synthetic_data=synthetic_data, metadata=metadata)
 similarity_report = evaluate_similarity(real_data= real_data, synthetic_data= synthetic_data, metadata= metadata)

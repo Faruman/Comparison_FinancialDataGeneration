@@ -119,6 +119,7 @@ real_data = real_data.drop(columns=["source_id", "target_id"])
 
 metadata = SingleTableMetadata()
 metadata.detect_from_dataframe(real_data)
+metadata.save_to_json("../working/transformed_pca_extd_df_grap_metadata_table.json")
 
 ## Test CTGAN
 ### Priority 1
@@ -127,7 +128,10 @@ synthesizer = FINDIFFSynthesizer(metadata, cat_embedding_dim= 8, mlp_dim= [2048,
                                 diffusion_steps= 485, diffusion_beta_start= 0.0004387, diffusion_beta_end= 0.005418,
                                 mlp_lr= 0.000644, epochs= 899, batch_size= 5000, verbose=True, use_wandb=True)
 synthesizer.fit(data=real_data)
+synthesizer.save("../model/FINDIFF.pkl")
+synthesizer.load("../model/FINDIFF.pkl")
 synthetic_data = synthesizer.sample(num_rows=10000)
+synthetic_data.to_csv("../synth/FINDIFF_synthetic_data.csv", index=False)
 diagnostic_report = run_diagnostic(real_data=real_data, synthetic_data=synthetic_data, metadata=metadata)
 quality_report = evaluate_quality(real_data=real_data, synthetic_data=synthetic_data, metadata=metadata)
 similarity_report = evaluate_similarity(real_data= real_data, synthetic_data= synthetic_data, metadata= metadata)

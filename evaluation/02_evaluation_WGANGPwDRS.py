@@ -119,6 +119,7 @@ real_data = real_data.drop(columns=["source_id", "target_id"])
 
 metadata = SingleTableMetadata()
 metadata.detect_from_dataframe(real_data)
+metadata.save_to_json("../working/transformed_pca_extd_df_grap_metadata_table.json")
 
 ## Test WGAN-GP with DRS
 ### Priority 1
@@ -127,7 +128,10 @@ synthesizer = WGANGP_DRSSynthesizer(metadata, embedding_dim= 64, generator_dim= 
                                 generator_lr= 0.0006069, generator_decay= 0.03474, discriminator_lr= 0.0007963, discriminator_decay= 0.04883, batch_size= 5000,
                                 epochs= 921, discriminator_steps= 12, pac= 15, dsr_epsilon= 0.0007755, dsr_gamma_percentile= 0.80, verbose=True, use_wandb=True)
 synthesizer.fit(data=real_data)
+synthesizer.save("../model/WGANGPwDRS.pkl")
+synthesizer.load("../model/WGANGPwDRS.pkl")
 synthetic_data = synthesizer.sample(num_rows=10000)
+synthetic_data.to_csv("../synth/WGANGPwDRS_synthetic_data.csv", index=False)
 diagnostic_report = run_diagnostic(real_data=real_data, synthetic_data=synthetic_data, metadata=metadata)
 quality_report = evaluate_quality(real_data=real_data, synthetic_data=synthetic_data, metadata=metadata)
 similarity_report = evaluate_similarity(real_data= real_data, synthetic_data= synthetic_data, metadata= metadata)

@@ -120,6 +120,7 @@ metadata.update_column(column_name='timeIndicator', sdtype='numerical')
 metadata.set_sequence_key(column_name='source_id')
 metadata.set_sequence_index(column_name='timeIndicator')
 metadata.set_primary_key(None)
+metadata.save_to_json("../working/transformed_pca_extd_df_grap_metadata_series.json")
 context_columns= [f"source_id_{i}" for i in range(embedding_dim)]
 
 
@@ -153,7 +154,10 @@ synthesizer = DOPPELGANGERSynthesizer(metadata, context_columns= context_columns
                                       attribute_discriminator_beta1 = 0.3048, discriminator_rounds = 2, batch_size= 5000,
                                       epochs= 575, verbose= True, use_wandb= True)
 synthesizer.fit(data=real_data)
+synthesizer.save("../model/DOPPELGANGER.pkl")
+synthesizer.load("../model/DOPPELGANGER.pkl")
 synthetic_data = synthesizer.sample(num_rows=10000)
+synthetic_data.to_csv("../synth/DOPPELGANGER_synthetic_data.csv", index=False)
 diagnostic_report = run_diagnostic(real_data=real_data, synthetic_data=synthetic_data, metadata=metadata)
 quality_report = evaluate_quality(real_data=real_data, synthetic_data=synthetic_data, metadata=metadata)
 similarity_report = evaluate_similarity(real_data= real_data, synthetic_data= synthetic_data, metadata= metadata)
