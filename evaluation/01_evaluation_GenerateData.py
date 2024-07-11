@@ -32,6 +32,9 @@ add_transaction_clusters = True
 
 data_path = "../data/transformed_pca_extd_df.csv"
 
+if not os.path.exists("../working/"):
+    os.makedirs("../working/")
+
 ## replace source_id and target_id with graph structure of ids
 if not os.path.exists("../working/transformed_pca_extd_df_graph.csv"):
     real_data = pd.read_csv(data_path, index_col=0)

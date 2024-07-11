@@ -41,6 +41,11 @@ add_transaction_clusters = True
 
 data_path = "../data/transformed_pca_extd_df.csv"
 
+if not os.path.exists("../model/"):
+    os.makedirs("../model/")
+if not os.path.exists("../synth/"):
+    os.makedirs("../synth/")
+
 ## replace source_id and target_id with graph structure of ids
 if not os.path.exists("../working/transformed_pca_extd_df_graph.csv"):
     real_data = pd.read_csv(data_path, index_col=0)
@@ -119,7 +124,9 @@ real_data = real_data.drop(columns=["source_id", "target_id"])
 
 metadata = SingleTableMetadata()
 metadata.detect_from_dataframe(real_data)
-metadata.save_to_json("../working/transformed_pca_extd_df_grap_metadata_table.json")
+if os.path.exists("../working/transformed_pca_extd_df_graph_metadata_table.json"):
+    os.remove("../working/transformed_pca_extd_df_graph_metadata_table.json")
+metadata.save_to_json("../working/transformed_pca_extd_df_graph_metadata_table.json")
 
 ## Test CTGAN
 ### Priority 1

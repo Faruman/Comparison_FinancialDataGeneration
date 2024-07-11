@@ -395,7 +395,7 @@ class WGANGP(BaseSynthesizer):
         self._device = device
         if self._generator is not None:
             self._generator.to(self._device)
-        if self.self._discriminator_stored and self._discriminator is not None:
+        if self._discriminator_stored and self._discriminator is not None:
             self._discriminator.to(self._device)
 
 class WGANGP_DRS(WGANGP):

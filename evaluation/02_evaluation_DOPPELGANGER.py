@@ -41,6 +41,11 @@ add_transaction_clusters = True
 
 data_path = "../data/transformed_pca_extd_df.csv"
 
+if not os.path.exists("../model/"):
+    os.makedirs("../model/")
+if not os.path.exists("../synth/"):
+    os.makedirs("../synth/")
+
 ## replace source_id and target_id with graph structure of ids
 if not os.path.exists("../working/transformed_pca_extd_df_graph.csv"):
     real_data = pd.read_csv(data_path, index_col=0)
@@ -120,7 +125,9 @@ metadata.update_column(column_name='timeIndicator', sdtype='numerical')
 metadata.set_sequence_key(column_name='source_id')
 metadata.set_sequence_index(column_name='timeIndicator')
 metadata.set_primary_key(None)
-metadata.save_to_json("../working/transformed_pca_extd_df_grap_metadata_series.json")
+if os.path.exists("../working/transformed_pca_extd_df_graph_metadata_series.json"):
+    os.remove("../working/transformed_pca_extd_df_graph_metadata_series.json")
+metadata.save_to_json("../working/transformed_pca_extd_df_graph_metadata_series.json")
 context_columns= [f"source_id_{i}" for i in range(embedding_dim)]
 
 

@@ -4,6 +4,7 @@ venv
 data
 synth
 working
+model
 
 wandb
 parameterSearc/wandb
