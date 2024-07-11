@@ -58,7 +58,7 @@ if not os.path.exists("../working/transformed_pca_extd_df_graph.csv"):
             cl_data = StandardScaler().fit_transform(real_data.drop(["source_id", "target_id"], axis=1).sample(100000))
         else:
             cl_data = StandardScaler().fit_transform(real_data.drop(["source_id", "target_id"], axis=1))
-        cl = KMeans(n_clusters=10)
+        cl = KMeans(n_clusters=12)
         real_data["transaction_clusters"] = cl.fit_predict(cl_data)
         #print(len(set(cl.labels_)) - (1 if -1 in cl.labels_ else 0))
 
