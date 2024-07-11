@@ -47,6 +47,6 @@ plt.show()
 
 # find optimal cluster number
 cl_data = StandardScaler().fit_transform(df.drop(["source_id", "target_id"], axis=1))
-cl = dualClustering(preperation_method= agglomerative(num_cluster_range= range(3, 30)), clustering_method= kMeans())
+cl = kMeans(num_cluster_range= range(3, 30), iterations= 10, method= "elbow")
 cl.fit(cl_data)
 print("Number of Clusters: {}".format(cl.num_clusters))
