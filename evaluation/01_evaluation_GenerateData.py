@@ -59,8 +59,8 @@ if not os.path.exists("../working/test_extended.csv"):
     edgelist = edgelist.rename(columns={"timeIndicator": "count"}).values.tolist()
     edgelist = [(x, y, {"count": z}) for x, y, z in edgelist]
     G.add_edges_from(edgelist)
-    #node_degree_dict = nx.degree(G)
-    #G = nx.subgraph(G, [x for x in G.nodes() if node_degree_dict[x] >= min_number_edges_per_node])
+    node_degree_dict = nx.degree(G)
+    G = nx.subgraph(G, [x for x in G.nodes() if node_degree_dict[x] >= min_number_edges_per_node])
     S = sg.StellarGraph.from_networkx(G)
 
     if embedding_generator == "graphwave":
