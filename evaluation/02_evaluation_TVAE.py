@@ -49,7 +49,7 @@ if not os.path.exists("../synth/"):
     os.makedirs("../synth/")
 
 ## replace source_id and target_id with graph structure of ids
-if not os.path.exists("../working/test_extended.csv"):
+if not os.path.exists("../working/transformed_pca_extd_df_graph.csv"):
     real_data = pd.read_csv(data_path, index_col=0)
     real_data = real_data.reset_index()
     real_data["index"] = pd.to_numeric(real_data["index"]).astype(int)

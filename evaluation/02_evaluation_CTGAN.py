@@ -49,7 +49,7 @@ if not os.path.exists("../synth/"):
     os.makedirs("../synth/")
 
 ## replace source_id and target_id with graph structure of ids
-if not os.path.exists("../working/test_extended.csv"):
+if not os.path.exists("../working/transformed_pca_extd_df_graph.csv"):
     real_data = pd.read_csv(data_path, index_col=0)
     real_data = real_data.reset_index()
     real_data["index"] = pd.to_numeric(real_data["index"]).astype(int)
@@ -137,7 +137,7 @@ metadata.save_to_json("../working/transformed_pca_extd_df_graph_metadata_table.j
 wandb.init(project= wandb_project, entity="financialDataGeneration")
 synthesizer = CTGANSynthesizer(metadata, embedding_dim= 64, generator_dim= [512,512], discriminator_dim= [512,512],
                                 generator_lr= 0.00008178, generator_decay= 0.007982, discriminator_lr= 0.000178, discriminator_decay= 0.004898, batch_size= 5000,
-                                epochs= 219, discriminator_steps= 6, pac= 2, verbose=True, use_wandb=True)
+                                epochs= 1, discriminator_steps= 6, pac= 2, verbose=True, use_wandb=True)
 synthesizer.fit(data=real_data)
 synthesizer.save("../model/CTGAN.pkl")
 synthesizer.load("../model/CTGAN.pkl")
