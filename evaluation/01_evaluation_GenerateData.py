@@ -38,7 +38,7 @@ if not os.path.exists("../working/"):
     os.makedirs("../working/")
 
 ## replace source_id and target_id with graph structure of ids
-if not os.path.exists("../working/transformed_pca_extd_df_graph.csv"):
+if not os.path.exists("../working/test.csv"):
     real_data = pd.read_csv(data_path, index_col=0)
     real_data = real_data.reset_index()
     real_data["index"] = pd.to_numeric(real_data["index"]).astype(int)
@@ -76,20 +76,37 @@ if not os.path.exists("../working/transformed_pca_extd_df_graph.csv"):
         embeddings = pca.fit_transform(embeddings)
 
     elif embedding_generator == "watchyourstep":
-        # use watchyourstep to embed nodes (https://arxiv.org/pdf/1710.09599)
-        generator = AdjacencyPowerGenerator(S, num_powers=10)
-        wys = WatchYourStep(
-            generator,
-            num_walks=80,
-            embedding_dimension= embedding_dim,
-            attention_regularizer=regularizers.l2(0.5),
-        )
-        x_in, x_out = wys.in_out_tensors()
-        model = Model(inputs=x_in, outputs=x_out)
-        model.compile(loss=graph_log_likelihood, optimizer=tf.keras.optimizers.Adam(1e-3))
-        batch_size = 64
-        train_gen = generator.flow(batch_size=batch_size, num_parallel_calls=10)
-        history = model.fit(train_gen, epochs=100, verbose=1, steps_per_epoch=int(len(S.nodes()) // batch_size))
+        if len(tf.config.list_physical_devices('GPU')) > 0:
+            with tf.device(tf.config.list_logical_devices('GPU')[0].name):
+                # use watchyourstep to embed nodes (https://arxiv.org/pdf/1710.09599)
+                generator = AdjacencyPowerGenerator(S, num_powers=10)
+                wys = WatchYourStep(
+                    generator,
+                    num_walks=80,
+                    embedding_dimension= embedding_dim,
+                    attention_regularizer=regularizers.l2(0.5),
+                )
+                x_in, x_out = wys.in_out_tensors()
+                model = Model(inputs=x_in, outputs=x_out)
+                model.compile(loss=graph_log_likelihood, optimizer=tf.keras.optimizers.Adam(1e-3))
+                batch_size = 64
+                train_gen = generator.flow(batch_size=batch_size, num_parallel_calls=10)
+                history = model.fit(train_gen, epochs=50, verbose=1, steps_per_epoch=int(len(S.nodes()) // batch_size))
+        else:
+            # use watchyourstep to embed nodes (https://arxiv.org/pdf/1710.09599)
+            generator = AdjacencyPowerGenerator(S, num_powers=10)
+            wys = WatchYourStep(
+                generator,
+                num_walks=80,
+                embedding_dimension=embedding_dim,
+                attention_regularizer=regularizers.l2(0.5),
+            )
+            x_in, x_out = wys.in_out_tensors()
+            model = Model(inputs=x_in, outputs=x_out)
+            model.compile(loss=graph_log_likelihood, optimizer=tf.keras.optimizers.Adam(1e-3))
+            batch_size = 64
+            train_gen = generator.flow(batch_size=batch_size, num_parallel_calls=10)
+            history = model.fit(train_gen, epochs=100, verbose=1, steps_per_epoch=int(len(S.nodes()) // batch_size))
         embeddings = wys.embeddings()
         plot_history(history)
         plt.show()
