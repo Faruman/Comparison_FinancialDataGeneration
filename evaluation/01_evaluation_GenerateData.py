@@ -89,7 +89,7 @@ if not os.path.exists("../working/test_extended.csv"):
         model.compile(loss=graph_log_likelihood, optimizer=tf.keras.optimizers.Adam(1e-3))
         batch_size = 64
         train_gen = generator.flow(batch_size=batch_size, num_parallel_calls=10)
-        history = model.fit(train_gen, epochs=100, verbose=1, steps_per_epoch=int(len(S.nodes()) // batch_size))
+        history = model.fit(train_gen, epochs=33, verbose=1, steps_per_epoch=int(len(S.nodes()) // batch_size))
         embeddings = wys.embeddings()
         plot_history(history)
         plt.show()
