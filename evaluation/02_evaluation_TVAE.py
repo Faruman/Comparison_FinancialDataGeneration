@@ -141,7 +141,7 @@ synthesizer = TVAESynthesizer(metadata, embedding_dim= 32, compress_dims= [512,5
 synthesizer.fit(data=real_data)
 synthesizer.save("../model/TVAE.pkl")
 synthesizer.load("../model/TVAE.pkl")
-synthetic_data = synthesizer.sample(num_rows=10000)
+synthetic_data = synthesizer.sample(num_rows=100000)
 synthetic_data.to_csv("../synth/TVAE_synthetic_data.csv", index=False)
 diagnostic_report = run_diagnostic(real_data=real_data, synthetic_data=synthetic_data, metadata=metadata)
 quality_report = evaluate_quality(real_data=real_data, synthetic_data=synthetic_data, metadata=metadata)

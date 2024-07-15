@@ -167,7 +167,7 @@ synthesizer = DOPPELGANGERSynthesizer(metadata, context_columns= context_columns
 synthesizer.fit(data=real_data)
 synthesizer.save("../model/DOPPELGANGER.pkl")
 synthesizer.load("../model/DOPPELGANGER.pkl")
-synthetic_data = synthesizer.sample(num_rows=10000)
+synthetic_data = synthesizer.sample(num_rows=100000)
 synthetic_data.to_csv("../synth/DOPPELGANGER_synthetic_data.csv", index=False)
 diagnostic_report = run_diagnostic(real_data=real_data, synthetic_data=synthetic_data, metadata=metadata)
 quality_report = evaluate_quality(real_data=real_data, synthetic_data=synthetic_data, metadata=metadata)

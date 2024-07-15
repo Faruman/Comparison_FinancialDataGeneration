@@ -141,7 +141,7 @@ synthesizer = FINDIFFSynthesizer(metadata, cat_embedding_dim= 8, mlp_dim= [2048,
 synthesizer.fit(data=real_data)
 synthesizer.save("../model/FINDIFF.pkl")
 synthesizer.load("../model/FINDIFF.pkl")
-synthetic_data = synthesizer.sample(num_rows=10000)
+synthetic_data = synthesizer.sample(num_rows=100000)
 synthetic_data.to_csv("../synth/FINDIFF_synthetic_data.csv", index=False)
 diagnostic_report = run_diagnostic(real_data=real_data, synthetic_data=synthetic_data, metadata=metadata)
 quality_report = evaluate_quality(real_data=real_data, synthetic_data=synthetic_data, metadata=metadata)
