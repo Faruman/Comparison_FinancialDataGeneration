@@ -59,10 +59,7 @@ if not os.path.exists("./working/transformed_pca_extd_df_graph.csv"):
             else:
                 cluster_data[column] = LabelEncoder().fit_transform(cluster_data[[column]])
 
-        if real_data.shape[0] > 500000:
-            cluster_data = StandardScaler().fit_transform(cluster_data.drop(["source_id", "target_id"], axis=1).sample(100000))
-        else:
-            cluster_data = StandardScaler().fit_transform(cluster_data.drop(["source_id", "target_id"], axis=1))
+        cluster_data = StandardScaler().fit_transform(cluster_data.drop(["source_id", "target_id"], axis=1))
         cl = KMeans(n_clusters=15)
         real_data["transaction_clusters"] = cl.fit_predict(cluster_data)
 
