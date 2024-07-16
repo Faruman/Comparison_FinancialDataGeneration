@@ -37,7 +37,7 @@ wandb_project = "EvalGenerationAlgorithms_graph"
 
 min_number_edges_per_node = 2
 embedding_generator = "watchyourstep"
-embedding_dim = 5
+embedding_dim = 6
 
 add_transaction_clusters = True
 
@@ -97,7 +97,7 @@ if not os.path.exists("./working/transformed_pca_extd_df_graph.csv"):
                 model.compile(loss=graph_log_likelihood, optimizer=tf.keras.optimizers.Adam(1e-3))
                 batch_size = 256
                 train_gen = generator.flow(batch_size=batch_size, num_parallel_calls=10)
-                history = model.fit(train_gen, epochs=50, verbose=1, steps_per_epoch=int(len(S.nodes()) // batch_size))
+                history = model.fit(train_gen, epochs=30, verbose=1, steps_per_epoch=int(len(S.nodes()) // batch_size))
         else:
             # use watchyourstep to embed nodes (https://arxiv.org/pdf/1710.09599)
             generator = AdjacencyPowerGenerator(S, num_powers=10)
