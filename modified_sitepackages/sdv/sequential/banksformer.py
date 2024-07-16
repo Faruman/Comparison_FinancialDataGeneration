@@ -20,7 +20,7 @@ from ..metadata.single_table import SingleTableMetadata
 from ..single_table.utils import (log_numerical_distributions_error, validate_numerical_distributions)
 from enum import Enum
 
-import rdt
+import wandb
 
 from sklearn.preprocessing import StandardScaler, OneHotEncoder, LabelEncoder
 
@@ -1893,41 +1893,90 @@ class Decoder(nn.Module):
 
 
 class Transformer(nn.Module):
-    def __init__(self, num_layers_enc, num_layers_dec, d_model, num_heads, dff, maximum_position_encoding, net_info, inp_dim, final_dim, config, rate=0.1):
-        super(Transformer, self).__init__()
+    def __init__(self, inp_dim_dict: dict, net_dim_dict: dict, feature_order: list, net_activations, model_dim= 128, num_layers_enc = None, num_layers_dec= 4, num_heads= 2, dff= 128,
+                 maximum_position_encoding= 256, net_info= None, final_dim= None, rate=0.1, learning_rate=0.001, verbose= False, epochs= 10, batch_size= 64, early_stop= 2):
 
-        self.decoder = Decoder(num_layers_dec, d_model, num_heads, dff, maximum_position_encoding, inp_dim, rate)
-        self.final_layer = nn.Linear(d_model, d_model)
+        self._epochs = epochs
+        self._batch_size = batch_size
+        self._early_stop = early_stop
 
-        self.ORDER = config["ORDER"]
-        self.FIELD_STARTS_IN = config["FIELD_STARTS_IN"]
-        self.FIELD_DIMS_IN = config["FIELD_DIMS_IN"]
-        self.FIELD_STARTS_NET = config["FIELD_STARTS_NET"]
-        self.FIELD_DIMS_NET = config["FIELD_DIMS_NET"]
-        self.ACTIVATIONS = config["ACTIVATIONS"]
+        self._learning_rate = learning_rate
+        self._verbose = verbose
 
-        for name, dim in self.FIELD_DIMS_NET.items():
-            acti = self.ACTIVATIONS.get(name, None)
-            self.__setattr__(name, nn.Linear(dim, acti))
+        self.feature_order = feature_order
+
+        self.inp_dim_dict = inp_dim_dict
+        self.inp_dim = len(inp_dim_dict.values())
+
+        self.net_dim_dict = net_dim_dict
+        self.net_dim = len(net_dim_dict.values())
+
+        self.net_activations = net_activations
+
+        if set(inp_dim_dict.keys()) == set(feature_order):
+            raise InternalError(
+                f"all elements in feature order need to be present in the input dict"
+            )
+
+        if set(inp_dim_dict.keys()) == set(net_dim_dict.keys()):
+            raise InternalError(
+                f"input dimension dict and input network dict need to have the same keys"
+            )
+
+        if self.inp_dim != len(self.net_activations):
+            raise InternalError(
+                f"An activation function needs to be provided for every input dimension"
+            )
+
+        self.decoder = Decoder(num_layers_dec, model_dim, num_heads, dff, maximum_position_encoding, self.inp_dim, rate)
+
+        self.final_layer = nn.Linear(model_dim, model_dim)
+
+        self.input_layer = {}
+        prev_inp_dim = self.model_dim
+        for name, dim in self.net_dim_dict.items():
+            if name in self.net_activations.keys():
+                if self.net_activations[name] is "relu":
+                   self.input_layer[name] = nn.Sequential(
+                        nn.Linear(prev_inp_dim, dim),
+                        nn.ReLU()
+                    )
+                elif self.net_activations[name] is "tanh":
+                    self.input_layer[name] = nn.Sequential(
+                        nn.Linear(prev_inp_dim, dim),
+                        nn.Tanh()
+                    )
+                elif self.net_activations[name] is "sigmoid":
+                    self.input_layer[name] = nn.Sequential(
+                        nn.Linear(prev_inp_dim, dim),
+                        nn.Sigmoid()
+                    )
+                else:
+                    self.input_layer[name] = nn.Linear(prev_inp_dim, dim)
+            else:
+                self.input_layer[name] = nn.Linear(prev_inp_dim, dim)
+            prev_inp_dim += dim
 
         self.train_loss = nn.MSELoss()
-        self.results = {x: [] for x in ["loss", "val_loss", "val_loss_full", "parts"]}
+        self.results = {x: [] for x in ["loss", "val_loss", "val_loss_full"]}
 
-    def forward(self, tar, training, look_ahead_mask, dec_padding_mask):
-        tar_inp = tar[:, :-1]
-        tar_out = tar[:, 1:]
+    def forward(self, input, training, look_ahead_mask, dec_padding_mask):
+        tar_inp = input[:, :-1]
+        tar_out = input[:, 1:]
 
         dec_output, attention_weights = self.decoder(tar_inp, training, look_ahead_mask, dec_padding_mask)
         final_output = self.final_layer(dec_output)
         preds = {}
 
-        for net_name in self.ORDER:
-            pred = self.__getattribute__(net_name)(final_output)
+        prev_dim = 0
+        for net_name in self.feature_order:
+            pred = self.input_layer[net_name](final_output)
             preds[net_name] = pred
 
-            st = self.FIELD_STARTS_IN[net_name]
-            end = st + self.FIELD_DIMS_IN[net_name]
-            to_add = tar_out[:, :, st:end]
+            start = prev_dim
+            end = prev_dim + self.inp_dim_dict[net_name]
+            prev_dim += self.inp_dim_dict[net_name]
+            to_add = tar_out[:, :, start:end]
 
             final_output = torch.cat([final_output, to_add], dim=-1)
 
@@ -1937,71 +1986,23 @@ class Transformer(nn.Module):
         combined_mask, dec_padding_mask = create_masks(tar)
 
         optimizer.zero_grad()
-        predictions, _ = self(inp, True, combined_mask, dec_padding_mask)
+        predictions, _ = self.forward(inp, True, combined_mask, dec_padding_mask)
         loss = self.loss_function(tar, predictions)
 
         loss.backward()
         optimizer.step()
 
-        self.train_loss(loss.item())
+        return loss.item()
 
     def val_step(self, inp, tar):
         combined_mask, dec_padding_mask = create_masks(tar)
 
         predictions, _ = self(inp, False, combined_mask, dec_padding_mask)
-        return self.loss_function(tar, predictions)
+        loss = self.loss_function(tar, predictions)
 
-    def fit(self, train_batches, x_cv, y_cv, epochs, early_stop=2, print_every=50, ckpt_every=2, mid_epoch_updates=None):
-        warned_acc = False
+        loss.backward()
 
-        if mid_epoch_updates:
-            batch_per_update = len(train_batches) // mid_epoch_updates
-
-        for epoch in range(epochs):
-            start = time.time()
-
-            for batch_no, (inp, tar) in enumerate(train_batches):
-                self.train_step(inp, tar)
-
-                if batch_no % print_every == 0:
-                    print(f'Epoch {epoch + 1} Batch {batch_no} Loss {self.train_loss:.4f}')
-
-                if mid_epoch_updates and batch_no % batch_per_update == 0:
-                    v_loss, *vl_parts = self.val_step(x_cv, y_cv)
-                    self.results["loss"].append(self.train_loss.result().numpy())
-                    self.results["val_loss"].append(v_loss)
-                    self.results["parts"].append(vl_parts)
-
-                    try:
-                        acc_res = self.acc_function()
-                        self.results.setdefault("val_acc", []).append(acc_res)
-                    except Exception as e:
-                        if not warned_acc:
-                            warned_acc = True
-                            print("Not recording acc:", e)
-
-            print(f'Epoch {epoch + 1} Loss {self.train_loss:.4f}')
-            v_loss, *vl_parts = self.val_step(x_cv, y_cv)
-            print(f"** on validation data loss is {v_loss:.4f}")
-
-            self.results["loss"].append(self.train_loss.result().numpy())
-            self.results["val_loss"].append(v_loss)
-            self.results["parts"].append(vl_parts)
-
-            try:
-                acc_res = self.acc_function()
-                self.results.setdefault("val_acc", []).append(acc_res)
-                print(f"** on validation data acc is \n{acc_res}")
-            except Exception as e:
-                if not warned_acc:
-                    warned_acc = True
-                    print("Not recording acc:", e)
-
-            if min(self.results["val_loss"]) < min(self.results["val_loss"][-early_stop:]):
-                print(f"Stopping early, last {early_stop} val losses are: {self.results['val_loss'][-early_stop:]} \nBest was {min(self.results['val_loss']):.3f}\n\n")
-                break
-
-
+        return loss.item()
 
 class BANKSFORMER:
     def __init__(self, max_sequence_len: int, sample_len: int, dropout_rate= 0.1, d_model= 128, num_layers_dec = 4, num_heads = 2,
@@ -2143,6 +2144,9 @@ class BANKSFORMER:
                 apply_feature_scaling=self._apply_feature_scaling,
                 apply_example_scaling=self._apply_example_scaling,
             )
+
+
+
             logger.info("Building Banksformer networks", extra={"user_log": True})
             self._build(
                 attribute_outputs,
@@ -2527,7 +2531,35 @@ class BANKSFORMER:
             feature_outputs: custom metadata for features
         """
 
+        self.attribute_outputs = attribute_outputs
+        self.feature_inp_outputs = feature_inp_outputs
+        self.feature_tar_outputs = feature_tar_outputs
 
+        if self._cuda and torch.cuda.is_available():
+            self.device = "cuda"
+        else:
+            self.device = "cpu"
+
+        self.transformer = Transformer(
+            self.feature_inp_outputs,
+            self.feature_tar_outputs,
+            activations=None,
+            num_layers_enc=None,
+            num_layers_dec=4,
+            d_model=128,
+            num_heads=2,
+            dff=128,
+            maximum_position_encoding=256,
+            net_info=None,
+            final_dim=None,
+            rate=0.1
+        )
+
+        self.transformer.to(self.device)
+
+        if self.attribute_outputs is None:
+            self.attribute_outputs = []
+        attribute_dim = sum(output.dim for output in self.attribute_outputs)
 
         self.is_built = True
 
@@ -2568,295 +2600,34 @@ class BANKSFORMER:
             pin_memory=True,
         )
 
-        opt_discriminator = torch.optim.Adam(
-            self.feature_discriminator.parameters(),
-            lr=self._discriminator_learning_rate,
-            betas=(self._discriminator_beta1, 0.999),
-        )
-
-        opt_attribute_discriminator = None
-        if self.attribute_discriminator is not None:
-            opt_attribute_discriminator = torch.optim.Adam(
-                self.attribute_discriminator.parameters(),
-                lr=self._attribute_discriminator_learning_rate,
-                betas=(self._attribute_discriminator_beta1, 0.999),
-            )
-
-        opt_generator = torch.optim.Adam(
-            self.generator.parameters(),
-            lr=self._generator_learning_rate,
-            betas=(self._generator_beta1, 0.999),
-        )
-
-        global_step = 0
-
-        # Set torch modules to training mode
-        self._set_mode(True)
-        scaler = torch.cuda.amp.GradScaler(enabled=self._mixed_precision_training)
+        optimizer = torch.optim.Adam(self.transformer.parameters(), lr=self.transformer._learning_rate)
 
         epoch_iterator = tqdm(range(self._epochs), disable=(not self._verbose))
         if self._verbose:
-            description = 'Gen. ({gen:.2f}) | Discrim. ({dis:.2f})'
+            description = 'Loss. ({loss:.2f})'
             epoch_iterator.set_description(description.format(gen=0, dis=0))
 
         for epoch in epoch_iterator:
-            for batch_idx, real_batch in enumerate(loader):
-                global_step += 1
 
-                with torch.cuda.amp.autocast(
-                    enabled=self._mixed_precision_training
-                ):
-                    attribute_noise = self.attribute_noise_func(real_batch[0].shape[0])
-                    feature_noise = self.feature_noise_func(real_batch[0].shape[0])
+            for batch_no, (inp, tar) in enumerate(loader):
 
-                    # Both real and generated batch are always three element tuple of
-                    # tensors. The tuple is structured as follows: (attribute_output,
-                    # additional_attribute_output, feature_output). If self.attribute_output
-                    # and/or self.additional_attribute_output is empty, the respective
-                    # tuple index will be filled with a placeholder nan-filled tensor.
-                    # These nan-filled tensors get filtered out in the _discriminate,
-                    # _get_gradient_penalty, and _discriminate_attributes functions.
+                combined_mask, dec_padding_mask = create_masks(tar)
 
-                    generated_batch = self.generator(attribute_noise, feature_noise)
-                    real_batch = [
-                        x.to(self.device, non_blocking=True) for x in real_batch
-                    ]
+                optimizer.zero_grad()
 
-                for _ in range(self._discriminator_rounds):
-                    opt_discriminator.zero_grad(
-                        set_to_none=self._mixed_precision_training
-                    )
-                    with torch.cuda.amp.autocast(enabled=True):
-                        generated_output = self._discriminate(generated_batch)
-                        real_output = self._discriminate(real_batch)
+                predictions, _ = self.transformer(inp, True, combined_mask, dec_padding_mask)
+                loss = self.transformer.loss_function(tar, predictions)
 
-                        loss_generated = torch.mean(generated_output)
-                        loss_real = -torch.mean(real_output)
-                        loss_gradient_penalty = self._get_gradient_penalty(
-                            generated_batch, real_batch, self._discriminate
-                        )
-
-                        loss = (
-                            loss_generated
-                            + loss_real
-                            + self._gradient_penalty_coef * loss_gradient_penalty
-                        )
-
-                    scaler.scale(loss).backward(retain_graph=True)
-                    scaler.step(opt_discriminator)
-                    scaler.update()
-
-                    if opt_attribute_discriminator is not None:
-                        opt_attribute_discriminator.zero_grad(set_to_none=False)
-                        # Exclude features (last element of batches) for
-                        # attribute discriminator
-                        with torch.cuda.amp.autocast(
-                            enabled=self._mixed_precision_training
-                        ):
-                            generated_output = self._discriminate_attributes(
-                                generated_batch[:-1]
-                            )
-                            real_output = self._discriminate_attributes(real_batch[:-1])
-
-                            loss_generated = torch.mean(generated_output)
-                            loss_real = -torch.mean(real_output)
-                            loss_gradient_penalty = self._get_gradient_penalty(
-                                generated_batch[:-1],
-                                real_batch[:-1],
-                                self._discriminate_attributes,
-                            )
-
-                            discriminator_loss = (
-                                loss_generated
-                                + loss_real
-                                + self._attribute_gradient_penalty_coef
-                                * loss_gradient_penalty
-                            )
-
-                        scaler.scale(discriminator_loss).backward(retain_graph=True)
-                        scaler.step(opt_attribute_discriminator)
-                        scaler.update()
-
-                for _ in range(self._generator_rounds):
-                    opt_generator.zero_grad(set_to_none=False)
-                    with torch.cuda.amp.autocast(
-                        enabled=self._mixed_precision_training
-                    ):
-                        generated_output = self._discriminate(generated_batch)
-
-                        if self.attribute_discriminator:
-                            # Exclude features (last element of batch) before
-                            # calling attribute discriminator
-                            attribute_generated_output = self._discriminate_attributes(
-                                generated_batch[:-1]
-                            )
-
-                            generator_loss = -torch.mean(
-                                generated_output
-                            ) + self._attribute_loss_coef * -torch.mean(
-                                attribute_generated_output
-                            )
-                        else:
-                            generator_loss = -torch.mean(generated_output)
-
-                    scaler.scale(generator_loss).backward()
-                    scaler.step(opt_generator)
-                    scaler.update()
+                loss.backward()
+                optimizer.step()
 
                 if self._verbose:
                     epoch_iterator.set_description(
-                        description.format(gen=generator_loss, dis=discriminator_loss)
+                        description.format(loss=loss.item())
                     )
+                if self._use_wandb:
+                    wandb.log({"Loss": loss.item()})
 
-    def _generate(
-        self, attribute_noise: torch.Tensor, feature_noise: torch.Tensor
-    ) -> NumpyArrayTriple:
-        """Internal method for generating from a DGAN model.
-
-        Returns data in the internal representation, including additional
-        attributes for the midpoint and half-range for features when
-        apply_example_scaling is True for some features.
-
-        Args:
-            attribute_noise: noise vectors to create synthetic data
-            feature_noise: noise vectors to create synthetic data
-
-        Returns:
-            Tuple of generated data in internal representation. If additional
-            attributes are used in the model, the tuple is 3 elements:
-            attributes, additional_attributes, features. If there are no
-            additional attributes in the model, the tuple is 2 elements:
-            attributes, features.
-        """
-        # Set torch modules to eval mode
-        self._set_mode(False)
-        batch = self.generator(attribute_noise, feature_noise)
-        return tuple(t.cpu().detach().numpy() for t in batch)
-
-    def _discriminate(
-        self,
-        batch,
-    ) -> torch.Tensor:
-        """Internal helper function to apply the GAN discriminator.
-
-        Args:
-            batch: internal data representation
-
-        Returns:
-            Output of the GAN discriminator.
-        """
-
-        batch = [index for index in batch if not torch.isnan(index).any()]
-        inputs = list(batch)
-        # Flatten the features
-
-        inputs[-1] = torch.reshape(inputs[-1], (inputs[-1].shape[0], -1))
-
-        input = torch.cat(inputs, dim=1)
-
-        output = self.feature_discriminator(input)
-        return output
-
-    def _discriminate_attributes(self, batch) -> torch.Tensor:
-        """Internal helper function to apply the GAN attribute discriminator.
-
-        Args:
-            batch: tuple of internal data of size 2 elements
-            containing attributes and additional_attributes.
-
-        Returns:
-            Output for GAN attribute discriminator.
-        """
-        batch = [index for index in batch if not torch.isnan(index).any()]
-        if not self.attribute_discriminator:
-            raise InternalError(
-                "discriminate_attributes called with no attribute_discriminator"
-            )
-
-        input = torch.cat(batch, dim=1)
-
-        output = self.attribute_discriminator(input)
-        return output
-
-    def _get_gradient_penalty(
-        self, generated_batch, real_batch, discriminator_func
-    ) -> torch.Tensor:
-        """Internal helper function to compute the gradient penalty component of
-        DoppelGANger loss.
-
-        Args:
-            generated_batch: internal data from the generator
-            real_batch: internal data for the training batch
-            discriminator_func: function to apply discriminator to interpolated
-                data
-
-        Returns:
-            Gradient penalty tensor.
-        """
-        generated_batch = [
-            generated_index
-            for generated_index in generated_batch
-            if not torch.isnan(generated_index).any()
-        ]
-        real_batch = [
-            real_index for real_index in real_batch if not torch.isnan(real_index).any()
-        ]
-
-        alpha = torch.rand(generated_batch[0].shape[0], device=self.device)
-        interpolated_batch = [
-            self._interpolate(g, r, alpha).requires_grad_(True)
-            for g, r in zip(generated_batch, real_batch)
-        ]
-
-        interpolated_output = discriminator_func(interpolated_batch)
-
-        gradients = torch.autograd.grad(
-            interpolated_output,
-            interpolated_batch,
-            grad_outputs=torch.ones(interpolated_output.shape, device=self.device),
-            retain_graph=True,
-            create_graph=True,
-        )
-
-        squared_sums = [
-            torch.sum(torch.square(g.view(g.size(0), -1))) for g in gradients
-        ]
-
-        norm = torch.sqrt(sum(squared_sums) + self.EPS)
-
-        return ((norm - 1.0) ** 2).mean()
-
-    def _interpolate(
-        self, x1: torch.Tensor, x2: torch.Tensor, alpha: torch.Tensor
-    ) -> torch.Tensor:
-        """Internal helper function to interpolate between 2 tensors.
-
-        Args:
-            x1: tensor
-            x2: tensor
-            alpha: scale or 1d tensor with values in [0,1]
-
-        Returns:
-            x1 + alpha * (x2 - x1)
-        """
-        diff = x2 - x1
-        expanded_dims = [1 for _ in diff.shape]
-        expanded_dims[0] = -1
-        reshaped_alpha = alpha.reshape(expanded_dims).expand(diff.shape)
-
-        return x1 + reshaped_alpha * diff
-
-    def _set_mode(self, mode: bool = True):
-        """Set torch module training mode.
-
-        Args:
-            train_mode: whether to set training mode (True) or evaluation mode
-                (False). Default: True
-        """
-        self.generator.train(mode)
-        self.feature_discriminator.train(mode)
-        if self.attribute_discriminator:
-            self.attribute_discriminator.train(mode)
 
     def set_random_state(self, random_state):
         np.random.seed(random_state)
