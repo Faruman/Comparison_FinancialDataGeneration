@@ -23,6 +23,9 @@ for name, path in data_dict.items():
         os.makedirs("./data/{}/plots/".format(name))
 
     df = pd.read_csv(path)
+
+    df = df.sample(100000)
+
     df = df.rename(columns={"Unnamed: 0": "datetimeIndicator"})
 
     print("Number of unique Sources: {}".format(df["source_id"].nunique()))
@@ -40,22 +43,22 @@ for name, path in data_dict.items():
     plt.show()
 
     # Analyse graph structure
-    #G = nx.DiGraph()
-    #edgelist = df.loc[df["source_id"] != df["target_id"]].groupby(by= ["source_id", "target_id"])["datetimeIndicator"].count().reset_index()
-    #edgelist = edgelist.rename(columns= {"datetimeIndicator": "count"}).values.tolist()
-    #edgelist = [(x, y, {"count": z}) for x,y,z in edgelist]
-    #G.add_edges_from(edgelist)
-    #node_degree_dict=nx.degree(G)
-    #G_draw= nx.subgraph(G,[x for x in G.nodes() if node_degree_dict[x]>3])
-    #print('Number of edges: {}'.format(G_draw.number_of_edges()))
-    #print('Number of nodes: {}'.format(G_draw.number_of_nodes()))
-    #edge_weight = np.array(list(nx.get_edge_attributes(G_draw,'count').values()))
-    #edge_weight = 10 * ((edge_weight - edge_weight.min())/ (edge_weight.max() - edge_weight.min())) + 1
-    #plt.figure()
-    #plt.title("Analysis of Graph Structure")
-    #nx.draw(G_draw, width=edge_weight, node_size=5, with_labels= False)
-    #plt.savefig("./data/{}/plots/networkGraph.png".format(name))
-    #plt.show()
+    G = nx.DiGraph()
+    edgelist = df.loc[df["source_id"] != df["target_id"]].groupby(by= ["source_id", "target_id"])["datetimeIndicator"].count().reset_index()
+    edgelist = edgelist.rename(columns= {"datetimeIndicator": "count"}).values.tolist()
+    edgelist = [(x, y, {"count": z}) for x,y,z in edgelist]
+    G.add_edges_from(edgelist)
+    node_degree_dict=nx.degree(G)
+    G_draw= nx.subgraph(G,[x for x in G.nodes() if node_degree_dict[x]>3])
+    print('Number of edges: {}'.format(G_draw.number_of_edges()))
+    print('Number of nodes: {}'.format(G_draw.number_of_nodes()))
+    edge_weight = np.array(list(nx.get_edge_attributes(G_draw,'count').values()))
+    edge_weight = 10 * ((edge_weight - edge_weight.min())/ (edge_weight.max() - edge_weight.min())) + 1
+    plt.figure()
+    plt.title("Analysis of Graph Structure")
+    nx.draw(G_draw, width=edge_weight, node_size=5, with_labels= False)
+    plt.savefig("./data/{}/plots/networkGraph.png".format(name))
+    plt.show()
 
     # find optimal cluster number
     for column in [c for c in df.columns if (df[c].dtype == "object") and (c not in ["source_id", "target_id", "datetimeIndicator"])]:
