@@ -35,7 +35,7 @@ from matplotlib import pyplot as plt
 #wandb.login()
 wandb_project = "EvalGenerationAlgorithms_graph"
 
-min_number_edges_per_node = 2
+min_number_edges_per_node = 3
 embedding_generator = "watchyourstep"
 embedding_dim = 6
 
