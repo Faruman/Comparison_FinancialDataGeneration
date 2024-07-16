@@ -4,6 +4,7 @@ from .copulagan import CopulaGANSynthesizer
 from .copulas import GaussianCopulaSynthesizer
 from .ctgan import CTGANSynthesizer
 from .tvae import TVAESynthesizer
+from .tvae_parallel import TVAESynthesizer as TVAESynthesizer_parallel
 from .wgangp import WGANGPSynthesizer, WGANGP_DRSSynthesizer
 from .findiff import FINDIFFSynthesizer
 
