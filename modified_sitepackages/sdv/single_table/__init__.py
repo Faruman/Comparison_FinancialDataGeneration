@@ -12,6 +12,7 @@ __all__ = (
     'GaussianCopulaSynthesizer',
     'CTGANSynthesizer',
     'TVAESynthesizer',
+    'TVAESynthesizer_parallel',
     'CopulaGANSynthesizer',
     'WGANGPSynthesizer',
     'WGANGP_DRSSynthesizer',
