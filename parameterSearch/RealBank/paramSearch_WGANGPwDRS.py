@@ -23,7 +23,7 @@ from sklearn.preprocessing import StandardScaler
 from tensorflow.keras import Model, regularizers
 import tensorflow as tf
 
-from modified_sitepackages.sdv.single_table import FINDIFFSynthesizer
+from modified_sitepackages.sdv.single_table import WGANGP_DRSSynthesizer
 
 from modified_sitepackages.sdv.evaluation.single_table import run_diagnostic, evaluate_quality, evaluate_similarity
 
@@ -40,18 +40,18 @@ embedding_dim = 5
 add_transaction_clusters = True
 
 ## replace source_id and target_id with graph structure of ids
-if not os.path.exists("../working/transformed_pca_extd_df_graph.csv"):
-    real_data = pd.read_csv("../data/transformed_pca_extd_df.csv", index_col=0)
+if not os.path.exists("./working/transformed_pca_extd_df_graph.csv"):
+    real_data = pd.read_csv("../../../data/RealBank/transformed_pca_extd_df.csv", index_col=0)
     real_data = real_data.reset_index()
     real_data["index"] = pd.to_numeric(real_data["index"]).astype(int)
     real_data = real_data.rename(columns={"index": "timeIndicator"})
 
     if add_transaction_clusters:
         if real_data.shape[0] > 500000:
-            cl_data = StandardScaler().fit_transform(real_data.drop(["source_id", "target_id"], axis=1).sample(100000))
+            cl_data = StandardScaler().fit_transform(real_data.drop(["source_id", "target_id"], axis=1).sample(500000))
         else:
             cl_data = StandardScaler().fit_transform(real_data.drop(["source_id", "target_id"], axis=1))
-        cl = KMeans(n_clusters=10)
+        cl = KMeans(n_clusters=7)
         real_data["transaction_clusters"] = cl.fit_predict(cl_data)
         #print(len(set(cl.labels_)) - (1 if -1 in cl.labels_ else 0))
 
@@ -105,9 +105,9 @@ if not os.path.exists("../working/transformed_pca_extd_df_graph.csv"):
     target_embeddings.columns = [f"target_id_{i}" for i in range(embedding_dim)]
     real_data = pd.concat((real_data, source_embeddings, target_embeddings), axis=1)
 
-    real_data.to_csv("../working/transformed_pca_extd_df_graph.csv", index=False)
+    real_data.to_csv("./working/transformed_pca_extd_df_graph.csv", index=False)
 
-real_data = pd.read_csv("../working/transformed_pca_extd_df_graph.csv")
+real_data = pd.read_csv("./working/transformed_pca_extd_df_graph.csv")
 real_data = real_data.reset_index()
 real_data["index"] = pd.to_numeric(real_data["index"]).astype(int)
 real_data = real_data.rename(columns={"index": "timeIndicator"})
@@ -118,32 +118,36 @@ real_data = real_data.drop(columns=["source_id", "target_id"])
 metadata = SingleTableMetadata()
 metadata.detect_from_dataframe(real_data)
 
-## Test CTGAN
+## Test WGAN-GP with DRS
 sweep_config = {
-    "name": "Param Search",
+    "name": "RealBank",
     "method": "bayes",
     "metric": {"goal": "minimize", "name": "Jensen Shannon Distance"},
     "parameters": {
-        "cat_embedding_dim": {"values": [2, 4, 8]},
-        "mlp_dim": {"values": [(512, 512, 512), (1024, 1024, 1024, 1024), (2048, 2048, 2048)]},
-        "mlp_activation": {"values": ["lrelu", "relu", "tanh"]},
-        "diffusion_steps": {"min": 200, "max": 1000},
-        "diffusion_beta_start": {"min": 0.00001, "max": 0.001},
-        "diffusion_beta_end": {"min": 0.001, "max": 0.1},
-        "mlp_lr": {"min": 0.00001, "max": 0.001},
+        "embedding_dim": {"values": [32, 64, 256]},
+        "generator_dim": {"values": [(128, 256, 512), (256, 512, 512), (256, 512, 1048)]},
+        "discriminator_dim": {"values": [(512, 256, 128), (512, 512, 256), (1048, 512, 256)]},
+        "generator_lr": {"min": 0.00001, "max": 0.001},
+        "generator_decay": {"min": 0.0, "max": 0.05},
+        "discriminator_lr": {"min": 0.00001, "max": 0.001},
+        "discriminator_decay": {"min": 0.0, "max": 0.05},
+        "discriminator_steps": {"min": 1, "max": 15},
         "epochs": {"min": 100, "max": 1000},
-        "batch_size": {"values": [5000]}
+        "pac": {"min": 1, "max": 20},
+        "batch_size": {"values": [5000]},
+        "dsr_epsilon": {"min": 0.00001, "max": 0.001},
+        "dsr_gamma_percentile": {"min": 0.7, "max": 0.95}
     },
 }
-#sweep_id = wandb.sweep(sweep=sweep_config, project="FinancialDataGeneration_FINDIFF_ParamSearch", entity="financialDataGeneration")
-sweep_id = "financialDataGeneration/FinancialDataGeneration_FINDIFF_ParamSearch/rylaiavt"
+#sweep_id = wandb.sweep(sweep=sweep_config, project="FinancialDataGeneration_WGANGPwDRS_ParamSearch", entity="financialDataGeneration")
+sweep_id = "financialDataGeneration/FinancialDataGeneration_WGANGPwDRS_ParamSearch/6a0f59c0"
 
 ### Priority 1
 def main():
-    wandb.init(project="FinancialDataGeneration_FINDIFF_ParamSearch", entity="financialDataGeneration")
-    synthesizer = FINDIFFSynthesizer(metadata, cat_embedding_dim= wandb.config["cat_embedding_dim"], mlp_dim= wandb.config["mlp_dim"], mlp_activation= wandb.config["mlp_activation"],
-                                    diffusion_steps= wandb.config["diffusion_steps"], diffusion_beta_start= wandb.config["diffusion_beta_start"], diffusion_beta_end= wandb.config["diffusion_beta_end"],
-                                    mlp_lr=wandb.config["mlp_lr"], epochs= wandb.config["epochs"], batch_size= wandb.config["batch_size"], verbose=True, use_wandb=True)
+    wandb.init(project="FinancialDataGeneration_WGANGPwDRS_ParamSearch", entity="financialDataGeneration")
+    synthesizer = WGANGP_DRSSynthesizer(metadata, embedding_dim= wandb.config["embedding_dim"], generator_dim= wandb.config["generator_dim"], discriminator_dim= wandb.config["discriminator_dim"],
+                                    generator_lr= wandb.config["generator_lr"], generator_decay= wandb.config["generator_decay"], discriminator_lr= wandb.config["discriminator_lr"], discriminator_decay= wandb.config["discriminator_decay"], batch_size= wandb.config["batch_size"],
+                                    epochs= wandb.config["epochs"], discriminator_steps= wandb.config["discriminator_steps"], pac= wandb.config["pac"], dsr_epsilon= wandb.config["dsr_epsilon"], dsr_gamma_percentile= 0.80, verbose=True, use_wandb=True)
     synthesizer.fit(data=real_data)
     synthetic_data = synthesizer.sample(num_rows=10000)
     diagnostic_report = run_diagnostic(real_data=real_data, synthetic_data=synthetic_data, metadata=metadata)

@@ -40,8 +40,8 @@ embedding_dim = 5
 add_transaction_clusters = True
 
 ## replace source_id and target_id with graph structure of ids
-if not os.path.exists("../../working/transformed_pca_extd_df_graph.csv"):
-    real_data = pd.read_csv("../../data/UnionBank/transformed_pca_extd_df.csv", index_col=0)
+if not os.path.exists("./working/transformed_pca_extd_df_graph.csv"):
+    real_data = pd.read_csv("../../../data/IbmSynth/transformed_df.csv", index_col=0)
     real_data = real_data.reset_index()
     real_data["index"] = pd.to_numeric(real_data["index"]).astype(int)
     real_data = real_data.rename(columns={"index": "timeIndicator"})
@@ -105,9 +105,9 @@ if not os.path.exists("../../working/transformed_pca_extd_df_graph.csv"):
     target_embeddings.columns = [f"target_id_{i}" for i in range(embedding_dim)]
     real_data = pd.concat((real_data, source_embeddings, target_embeddings), axis=1)
 
-    real_data.to_csv("../working/transformed_pca_extd_df_graph.csv", index=False)
+    real_data.to_csv("./working/transformed_pca_extd_df_graph.csv", index=False)
 
-real_data = pd.read_csv("../../working/transformed_pca_extd_df_graph.csv")
+real_data = pd.read_csv("./working/transformed_pca_extd_df_graph.csv")
 real_data = real_data.reset_index()
 real_data["index"] = pd.to_numeric(real_data["index"]).astype(int)
 real_data = real_data.rename(columns={"index": "timeIndicator"})
@@ -120,7 +120,7 @@ metadata.detect_from_dataframe(real_data)
 
 ## Test CTGAN
 sweep_config = {
-    "name": "Param Search",
+    "name": "IbmSynth",
     "method": "bayes",
     "metric": {"goal": "minimize", "name": "Jensen Shannon Distance"},
     "parameters": {

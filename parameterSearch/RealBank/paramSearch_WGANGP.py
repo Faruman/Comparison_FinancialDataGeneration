@@ -23,7 +23,7 @@ from sklearn.preprocessing import StandardScaler
 from tensorflow.keras import Model, regularizers
 import tensorflow as tf
 
-from modified_sitepackages.sdv.single_table import CTGANSynthesizer
+from modified_sitepackages.sdv.single_table import WGANGPSynthesizer
 
 from modified_sitepackages.sdv.evaluation.single_table import run_diagnostic, evaluate_quality, evaluate_similarity
 
@@ -40,8 +40,8 @@ embedding_dim = 5
 add_transaction_clusters = True
 
 ## replace source_id and target_id with graph structure of ids
-if not os.path.exists("../working/transformed_pca_extd_df_graph.csv"):
-    real_data = pd.read_csv("../data/transformed_pca_extd_df.csv", index_col=0)
+if not os.path.exists("./working/transformed_pca_extd_df_graph.csv"):
+    real_data = pd.read_csv("../../../data/RealBank/transformed_pca_extd_df.csv", index_col=0)
     real_data = real_data.reset_index()
     real_data["index"] = pd.to_numeric(real_data["index"]).astype(int)
     real_data = real_data.rename(columns={"index": "timeIndicator"})
@@ -51,7 +51,7 @@ if not os.path.exists("../working/transformed_pca_extd_df_graph.csv"):
             cl_data = StandardScaler().fit_transform(real_data.drop(["source_id", "target_id"], axis=1).sample(100000))
         else:
             cl_data = StandardScaler().fit_transform(real_data.drop(["source_id", "target_id"], axis=1))
-        cl = KMeans(n_clusters=10)
+        cl = KMeans(n_clusters=7)
         real_data["transaction_clusters"] = cl.fit_predict(cl_data)
         #print(len(set(cl.labels_)) - (1 if -1 in cl.labels_ else 0))
 
@@ -98,16 +98,16 @@ if not os.path.exists("../working/transformed_pca_extd_df_graph.csv"):
     # print(pca.explained_variance_ratio_)
     embeddings_dict = dict(zip(S.nodes(), embeddings))
 
-    real_data = real_data.loc[real_data["source_id"].isin(S.nodes()) & real_data["target_id"].isin(S.nodes())].reset_index(drop= True)
+    real_data = real_data.loc[real_data["source_id"].isin(S.nodes()) & real_data["target_id"].isin(S.nodes())]
     source_embeddings = pd.DataFrame(real_data["source_id"].progress_apply(lambda x: embeddings_dict[x]).to_list())
     source_embeddings.columns = [f"source_id_{i}" for i in range(embedding_dim)]
     target_embeddings = pd.DataFrame(real_data["target_id"].progress_apply(lambda x: embeddings_dict[x]).to_list())
     target_embeddings.columns = [f"target_id_{i}" for i in range(embedding_dim)]
     real_data = pd.concat((real_data, source_embeddings, target_embeddings), axis=1)
 
-    real_data.to_csv("../working/transformed_pca_extd_df_graph.csv", index=False)
+    real_data.to_csv("./working/transformed_pca_extd_df_graph.csv", index=False)
 
-real_data = pd.read_csv("../working/transformed_pca_extd_df_graph.csv")
+real_data = pd.read_csv("./working/transformed_pca_extd_df_graph.csv")
 real_data = real_data.reset_index()
 real_data["index"] = pd.to_numeric(real_data["index"]).astype(int)
 real_data = real_data.rename(columns={"index": "timeIndicator"})
@@ -118,37 +118,37 @@ real_data = real_data.drop(columns=["source_id", "target_id"])
 metadata = SingleTableMetadata()
 metadata.detect_from_dataframe(real_data)
 
-## Test CTGAN
+## Test WGAN-GP
 sweep_config = {
-    "name": "Param Search",
+    "name": "RealBank",
     "method": "bayes",
     "metric": {"goal": "minimize", "name": "Jensen Shannon Distance"},
     "parameters": {
         "embedding_dim": {"values": [32, 64, 256]},
-        "generator_dim": {"values": [(128, 128), (256, 256), (512, 512)]},
-        "discriminator_dim": {"values": [(128, 128), (256, 256), (512, 512)]},
+        "generator_dim": {"values": [(128, 256, 512), (256, 512, 512), (256, 512, 1048)]},
+        "discriminator_dim": {"values": [(512, 256, 128), (512, 512, 256), (1048, 512, 256)]},
         "generator_lr": {"min": 0.00001, "max": 0.001},
         "generator_decay": {"min": 0.0, "max": 0.05},
         "discriminator_lr": {"min": 0.00001, "max": 0.001},
         "discriminator_decay": {"min": 0.0, "max": 0.05},
         "discriminator_steps": {"min": 1, "max": 15},
         "epochs": {"min": 100, "max": 1000},
-        "pac": {"values": [1, 2, 4, 8, 10, 20]},
+        "pac": {"min": 1, "max": 20},
         "batch_size": {"values": [5000]}
     },
 }
-sweep_id = wandb.sweep(sweep=sweep_config, project="FinancialDataGeneration_CTGAN_ParamSearch", entity="financialDataGeneration")
+sweep_id = wandb.sweep(sweep=sweep_config, project="FinancialDataGeneration_WGANGP_ParamSearch", entity="financialDataGeneration")
 
-### Priority 1
+### Priority 3
 def main():
-    wandb.init(project="FinancialDataGeneration_CTGAN_ParamSearch", entity="financialDataGeneration")
-    synthesizer = CTGANSynthesizer(metadata, embedding_dim= wandb.config["embedding_dim"], generator_dim= wandb.config["generator_dim"], discriminator_dim= wandb.config["discriminator_dim"],
+    wandb.init(project="FinancialDataGeneration_ParamSearch", entity="financialDataGeneration")
+    synthesizer = WGANGPSynthesizer(metadata, embedding_dim= wandb.config["embedding_dim"], generator_dim= wandb.config["generator_dim"], discriminator_dim= wandb.config["discriminator_dim"],
                                     generator_lr= wandb.config["generator_lr"], generator_decay= wandb.config["generator_decay"], discriminator_lr= wandb.config["discriminator_lr"], discriminator_decay= wandb.config["discriminator_decay"], batch_size= wandb.config["batch_size"],
-                                    epochs= wandb.config["epochs"], discriminator_steps= wandb.config["discriminator_steps"], pac= wandb.config["pac"], verbose=True, use_wandb=True)
+                                    epochs= wandb.config["epochs"], discriminator_steps= wandb.config["discriminator_steps"], pac= wandb.config["pac"], verbose= True, use_wandb= True)
     synthesizer.fit(data=real_data)
     synthetic_data = synthesizer.sample(num_rows=10000)
-    diagnostic_report = run_diagnostic(real_data=real_data, synthetic_data=synthetic_data, metadata=metadata)
-    quality_report = evaluate_quality(real_data=real_data, synthetic_data=synthetic_data, metadata=metadata)
+    diagnostic_report = run_diagnostic(real_data= real_data, synthetic_data= synthetic_data, metadata= metadata)
+    quality_report = evaluate_quality(real_data= real_data, synthetic_data= synthetic_data, metadata= metadata)
     similarity_report = evaluate_similarity(real_data= real_data, synthetic_data= synthetic_data, metadata= metadata)
     wandb.log({**diagnostic_report.get_properties().set_index("Property")["Score"].to_dict(), **quality_report.get_properties().set_index("Property")["Score"].to_dict(), **similarity_report.get_properties().set_index("Property")["Score"].to_dict()})
     wandb.finish()
