@@ -108,6 +108,7 @@ if not os.path.exists("./working/transformed_pca_extd_df_graph.csv"):
     real_data.to_csv("./working/transformed_pca_extd_df_graph.csv", index=False)
 
 real_data = pd.read_csv("./working/transformed_pca_extd_df_graph.csv")
+real_data = real_data.sample(100000)
 real_data = real_data.reset_index()
 real_data["index"] = pd.to_numeric(real_data["index"]).astype(int)
 real_data = real_data.rename(columns={"index": "timeIndicator"})

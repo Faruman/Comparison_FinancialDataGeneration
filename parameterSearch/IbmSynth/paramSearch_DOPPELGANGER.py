@@ -109,6 +109,7 @@ if not os.path.exists("./working/transformed_pca_extd_df_graph.csv"):
 
 ## load data
 real_data = pd.read_csv("./working/transformed_pca_extd_df_graph.csv")
+real_data = real_data.sample(100000)
 real_data = real_data.drop(columns=["target_id"])
 
 metadata = SingleTableMetadata()
