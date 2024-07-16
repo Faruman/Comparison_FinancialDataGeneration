@@ -18,7 +18,7 @@ from stellargraph.utils import plot_history
 from sklearn.decomposition import PCA
 
 from sklearn.cluster import KMeans
-from sklearn.preprocessing import StandardScaler
+from sklearn.preprocessing import StandardScaler, OneHotEncoder, LabelEncoder
 
 from tensorflow.keras import Model, regularizers
 import tensorflow as tf
@@ -47,13 +47,24 @@ if not os.path.exists("./working/transformed_pca_extd_df_graph.csv"):
     real_data = real_data.rename(columns={"index": "timeIndicator"})
 
     if add_transaction_clusters:
+        cluster_data = real_data
+        for column in [c for c in cluster_data.columns if (cluster_data[c].dtype == "object") and (c not in ["source_id", "target_id", "datetimeIndicator"])]:
+            if cluster_data[column].nunique() <= 15:
+                column_oh = OneHotEncoder().fit_transform(cluster_data[[column]])
+                column_oh = pd.DataFrame(column_oh.toarray(),
+                                         columns=[column + "_" + str(i) for i in range(column_oh.shape[1])],
+                                         index=cluster_data.index)
+                cluster_data = pd.concat((cluster_data, column_oh), axis=1)
+                cluster_data = cluster_data.drop(columns=[column])
+            else:
+                cluster_data[column] = LabelEncoder().fit_transform(cluster_data[[column]])
+
         if real_data.shape[0] > 500000:
-            cl_data = StandardScaler().fit_transform(real_data.drop(["source_id", "target_id"], axis=1).sample(100000))
+            cluster_data = StandardScaler().fit_transform(cluster_data.drop(["source_id", "target_id"], axis=1).sample(100000))
         else:
-            cl_data = StandardScaler().fit_transform(real_data.drop(["source_id", "target_id"], axis=1))
-        cl = KMeans(n_clusters=10)
-        real_data["transaction_clusters"] = cl.fit_predict(cl_data)
-        #print(len(set(cl.labels_)) - (1 if -1 in cl.labels_ else 0))
+            cluster_data = StandardScaler().fit_transform(cluster_data.drop(["source_id", "target_id"], axis=1))
+        cl = KMeans(n_clusters=15)
+        real_data["transaction_clusters"] = cl.fit_predict(cluster_data)
 
     G = nx.DiGraph()
     edgelist = real_data.loc[real_data["source_id"] != real_data["target_id"]].groupby(by=["source_id", "target_id"])["timeIndicator"].count().reset_index()
