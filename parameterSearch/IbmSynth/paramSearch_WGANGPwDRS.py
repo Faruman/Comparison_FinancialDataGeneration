@@ -163,8 +163,8 @@ sweep_config = {
         "dsr_gamma_percentile": {"min": 0.7, "max": 0.95}
     },
 }
-sweep_id = wandb.sweep(sweep=sweep_config, project="FinancialDataGeneration_WGANGPwDRS_ParamSearch", entity="financialDataGeneration")
-#sweep_id = "financialDataGeneration/FinancialDataGeneration_WGANGPwDRS_ParamSearch/6a0f59c0"
+#sweep_id = wandb.sweep(sweep=sweep_config, project="FinancialDataGeneration_WGANGPwDRS_ParamSearch", entity="financialDataGeneration")
+sweep_id = "financialDataGeneration/FinancialDataGeneration_WGANGPwDRS_ParamSearch/if2qo0y0"
 
 ### Priority 1
 def main():

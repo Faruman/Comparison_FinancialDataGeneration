@@ -159,7 +159,7 @@ sweep_config = {
     },
 }
 #sweep_id = wandb.sweep(sweep=sweep_config, project="FinancialDataGeneration_TVAE_ParamSearch", entity="financialDataGeneration")
-sweep_id = "financialDataGeneration/FinancialDataGeneration_TVAE_ParamSearch/bh90ig0h"
+sweep_id = "financialDataGeneration/FinancialDataGeneration_TVAE_ParamSearch/tl4skgvg"
 
 ### Priority 1
 def main():

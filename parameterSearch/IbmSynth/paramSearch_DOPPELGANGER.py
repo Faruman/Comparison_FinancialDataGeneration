@@ -136,12 +136,13 @@ if not os.path.exists("./working/transformed_pca_extd_df_graph.csv"):
 ## load data
 real_data = pd.read_csv("./working/transformed_pca_extd_df_graph.csv")
 real_data = real_data.sample(100000)
+real_data["timeIndicator"] = pd.to_datetime(real_data["timeIndicator"])
 real_data = real_data.drop(columns=["target_id"])
 
 metadata = SingleTableMetadata()
 metadata.detect_from_dataframe(real_data)
 metadata.update_column(column_name='source_id', sdtype='id')
-metadata.update_column(column_name='timeIndicator', sdtype='numerical')
+metadata.update_column(column_name='transaction_clusters', sdtype='categorical')
 metadata.set_sequence_key(column_name='source_id')
 metadata.set_sequence_index(column_name='timeIndicator')
 metadata.set_primary_key(None)
