@@ -41,7 +41,7 @@ embedding_dim = 6
 
 add_transaction_clusters = True
 
-data_path = "../data/transformed_pca_extd_df.csv"
+data_path = "../data/RealBank/transformed_pca_extd_df.csv"
 
 if not os.path.exists("../model/"):
     os.makedirs("../model/")

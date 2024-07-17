@@ -24,7 +24,7 @@ add_transaction_clusters = True
 
 ## load data
 if not os.path.exists("./working/transformed_pca_extd_df_graph.csv"):
-    real_data = pd.read_csv("./data/transformed_pca_extd_df.csv", index_col=0)
+    real_data = pd.read_csv("data/RealBank/transformed_pca_extd_df.csv", index_col=0)
     real_data = real_data.reset_index()
     real_data["index"] = pd.to_numeric(real_data["index"]).astype(int)
     real_data = real_data.rename(columns={"index": "timeIndicator"})

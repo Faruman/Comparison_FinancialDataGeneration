@@ -12,8 +12,9 @@ from modified_sitepackages.clusteringMethods.methods import agglomerative, kMean
 from modified_sitepackages.clusteringMethods.meta import dualClustering
 from sklearn.preprocessing import StandardScaler, LabelEncoder, OneHotEncoder
 
-data_dict = {"UnionBank": "data/RealBank/transformed_pca_extd_df.csv",
-             "IbmSynth": "data/IbmSynth/transformed_df.csv"}
+#data_dict = {"UnionBank": "data/RealBank/transformed_pca_extd_df.csv",
+#             "IbmSynth": "data/IbmSynth/transformed_df.csv"}
+data_dict = {"IbmSynth": "data/IbmSynth/transformed_df.csv"}
 
 for name, path in data_dict.items():
 
@@ -24,7 +25,7 @@ for name, path in data_dict.items():
 
     df = pd.read_csv(path)
 
-    df = df.sample(100000)
+    #df = df.sample(500000, random_state= 42)
 
     df = df.rename(columns={"Unnamed: 0": "datetimeIndicator"})
 
@@ -49,7 +50,7 @@ for name, path in data_dict.items():
     edgelist = [(x, y, {"count": z}) for x,y,z in edgelist]
     G.add_edges_from(edgelist)
     node_degree_dict=nx.degree(G)
-    G_draw= nx.subgraph(G,[x for x in G.nodes() if node_degree_dict[x]>3])
+    G_draw= nx.subgraph(G,[x for x in G.nodes() if node_degree_dict[x]>= 3])
     print('Number of edges: {}'.format(G_draw.number_of_edges()))
     print('Number of nodes: {}'.format(G_draw.number_of_nodes()))
     edge_weight = np.array(list(nx.get_edge_attributes(G_draw,'count').values()))
@@ -70,6 +71,6 @@ for name, path in data_dict.items():
         else:
             df[column] = LabelEncoder().fit_transform(df[[column]])
     cl_data = StandardScaler().fit_transform(df.drop(["source_id", "target_id", "datetimeIndicator"], axis=1))
-    cl = kMeans(num_cluster_range= range(3, 30), iterations= 10, method= "elbow")
+    cl = kMeans(num_cluster_range= range(3, 30), iterations= 50, method= "elbow")
     cl.fit(cl_data)
     print("Number of Clusters: {}".format(cl.num_clusters))
