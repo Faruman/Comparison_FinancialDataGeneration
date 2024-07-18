@@ -43,9 +43,9 @@ metadata.save_to_json("./working/transformed_pca_extd_df_graph_metadata_table.js
 
 
 wandb.init(project=wandb_project, entity="financialDataGeneration")
-synthesizer = WGANGP_DRSSynthesizer(metadata, embedding_dim= 64, generator_dim= [256,512,1048], discriminator_dim= [512,256,128],
-                                generator_lr= 0.0006069, generator_decay= 0.03474, discriminator_lr= 0.0007963, discriminator_decay= 0.04883, batch_size= 5000,
-                                epochs= 921, discriminator_steps= 12, pac= 15, dsr_epsilon= 0.0007755, dsr_gamma_percentile= 0.80, verbose=True, use_wandb=True)
+synthesizer = WGANGP_DRSSynthesizer(metadata, embedding_dim= 256, generator_dim= [128,256,512], discriminator_dim= [512,256,128],
+                                generator_lr= 0.000915, generator_decay= 0.03671, discriminator_lr= 0.0009803, discriminator_decay= 0.01297, batch_size= 5000,
+                                epochs= 444, discriminator_steps= 7, pac= 19, dsr_epsilon= 0.0003613, dsr_gamma_percentile= 0.7462, verbose=True, use_wandb=True)
 synthesizer.fit(data=real_data)
 synthesizer.save("./model/WGANGPwDRS.pkl")
 synthesizer.load("./model/WGANGPwDRS.pkl")

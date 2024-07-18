@@ -41,9 +41,9 @@ metadata.save_to_json("./working/transformed_pca_extd_df_graph_metadata_table.js
 
 
 wandb.init(project= wandb_project, entity="financialDataGeneration")
-synthesizer = CTGANSynthesizer(metadata, embedding_dim= 64, generator_dim= [512,512], discriminator_dim= [512,512],
-                                generator_lr= 0.00008178, generator_decay= 0.007982, discriminator_lr= 0.000178, discriminator_decay= 0.004898, batch_size= 5000,
-                                epochs= 219, discriminator_steps= 6, pac= 2, verbose=True, use_wandb=True)
+synthesizer = CTGANSynthesizer(metadata, embedding_dim= 256, generator_dim= [256,256], discriminator_dim= [512,512],
+                                generator_lr= 0.00007396, generator_decay= 0.01233, discriminator_lr= 0.0001012, discriminator_decay= 0.00537, batch_size= 5000,
+                                epochs= 457, discriminator_steps= 6, pac= 1, verbose=True, use_wandb=True)
 synthesizer.fit(data=real_data)
 synthesizer.save("./model/CTGAN.pkl")
 synthesizer.load("./model/CTGAN.pkl")
