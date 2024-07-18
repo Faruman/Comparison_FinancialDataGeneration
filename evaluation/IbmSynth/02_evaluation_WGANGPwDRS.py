@@ -7,7 +7,7 @@ tqdm.pandas()
 
 from sdv.metadata import SingleTableMetadata
 
-from modified_sitepackages.sdv.single_table import TVAESynthesizer
+from modified_sitepackages.sdv.single_table import WGANGP_DRSSynthesizer
 
 from modified_sitepackages.sdv.evaluation.single_table import run_diagnostic, evaluate_quality, evaluate_similarity
 
@@ -16,7 +16,7 @@ import wandb
 
 ## setup wandb
 #wandb.login()
-wandb_project = "FinancialDataGeneration_TVAE_Evaluation"
+wandb_project = "FinancialDataGeneration_WGANGPwDRS_Evaluation"
 
 embedding_dim = 6
 
@@ -27,7 +27,7 @@ if not os.path.exists("./synth/"):
     os.makedirs("./synth/")
 
 
-real_data = pd.read_csv("./working/transformed_pca_extd_df_graph.csv")
+real_data = pd.read_csv("./working/transformed_df_graph.csv")
 real_data = real_data.reset_index()
 real_data["index"] = pd.to_numeric(real_data["index"]).astype(int)
 real_data = real_data.rename(columns={"index": "timeIndicator"})
@@ -43,14 +43,14 @@ metadata.save_to_json("./working/transformed_pca_extd_df_graph_metadata_table.js
 
 
 wandb.init(project=wandb_project, entity="financialDataGeneration")
-synthesizer = TVAESynthesizer(metadata, embedding_dim= 32, compress_dims= [512,512], decompress_dims= [128,128],
-                                l2scale= 0.0006256, loss_factor= 1, learning_rate= 0.0006903,
-                                epochs= 544, batch_size= 5000, verbose=True, use_wandb=True)
+synthesizer = WGANGP_DRSSynthesizer(metadata, embedding_dim= 64, generator_dim= [256,512,1048], discriminator_dim= [512,256,128],
+                                generator_lr= 0.0006069, generator_decay= 0.03474, discriminator_lr= 0.0007963, discriminator_decay= 0.04883, batch_size= 5000,
+                                epochs= 921, discriminator_steps= 12, pac= 15, dsr_epsilon= 0.0007755, dsr_gamma_percentile= 0.80, verbose=True, use_wandb=True)
 synthesizer.fit(data=real_data)
-synthesizer.save("./model/TVAE.pkl")
-synthesizer.load("./model/TVAE.pkl")
+synthesizer.save("./model/WGANGPwDRS.pkl")
+synthesizer.load("./model/WGANGPwDRS.pkl")
 synthetic_data = synthesizer.sample(num_rows=100000)
-synthetic_data.to_csv("./synth/TVAE_synthetic_data.csv", index=False)
+synthetic_data.to_csv("./synth/WGANGPwDRS_synthetic_data.csv", index=False)
 diagnostic_report = run_diagnostic(real_data=real_data, synthetic_data=synthetic_data, metadata=metadata)
 quality_report = evaluate_quality(real_data=real_data, synthetic_data=synthetic_data, metadata=metadata)
 similarity_report = evaluate_similarity(real_data= real_data, synthetic_data= synthetic_data, metadata= metadata)

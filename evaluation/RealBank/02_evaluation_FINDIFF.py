@@ -40,8 +40,7 @@ if os.path.exists("./working/transformed_pca_extd_df_graph_metadata_table.json")
     os.remove("./working/transformed_pca_extd_df_graph_metadata_table.json")
 metadata.save_to_json("./working/transformed_pca_extd_df_graph_metadata_table.json")
 
-## Test CTGAN
-### Priority 1
+
 wandb.init(project=wandb_project, entity="financialDataGeneration")
 synthesizer = FINDIFFSynthesizer(metadata, cat_embedding_dim= 8, mlp_dim= [2048,2048,2048], mlp_activation= "lrelu",
                                 diffusion_steps= 485, diffusion_beta_start= 0.0004387, diffusion_beta_end= 0.005418,

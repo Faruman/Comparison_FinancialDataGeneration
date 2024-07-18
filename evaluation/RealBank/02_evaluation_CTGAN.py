@@ -20,8 +20,6 @@ wandb_project = "FinancialDataGeneration_CTGAN_Evaluation"
 embedding_dim = 6
 
 
-data_path = "../../data/RealBank/transformed_pca_extd_df.csv"
-
 if not os.path.exists("./model/"):
     os.makedirs("./model/")
 if not os.path.exists("./synth/"):
@@ -41,8 +39,7 @@ if os.path.exists("./working/transformed_pca_extd_df_graph_metadata_table.json")
     os.remove("./working/transformed_pca_extd_df_graph_metadata_table.json")
 metadata.save_to_json("./working/transformed_pca_extd_df_graph_metadata_table.json")
 
-## CTGAN
-### Priority 1
+
 wandb.init(project= wandb_project, entity="financialDataGeneration")
 synthesizer = CTGANSynthesizer(metadata, embedding_dim= 64, generator_dim= [512,512], discriminator_dim= [512,512],
                                 generator_lr= 0.00008178, generator_decay= 0.007982, discriminator_lr= 0.000178, discriminator_decay= 0.004898, batch_size= 5000,

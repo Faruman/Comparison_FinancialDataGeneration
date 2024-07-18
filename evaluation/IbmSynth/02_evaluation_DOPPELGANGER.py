@@ -26,7 +26,7 @@ if not os.path.exists("./synth/"):
     os.makedirs("./synth/")
 
 ## load data
-real_data = pd.read_csv("./working/transformed_pca_extd_df_graph.csv")
+real_data = pd.read_csv("./working/transformed_df_graph.csv")
 real_data = real_data.drop(columns=["target_id"])
 
 metadata = SingleTableMetadata()
