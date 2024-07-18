@@ -2085,7 +2085,10 @@ class DGAN:
         self.feature_outputs = feature_outputs
 
         if self._cuda and torch.cuda.is_available():
-            self.device = "cuda"
+            if isinstance(self._cuda, str):
+                self.device = self._cuda
+            else:
+                self.device = "cuda"
         else:
             self.device = "cpu"
 
