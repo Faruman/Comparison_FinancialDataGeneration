@@ -7,118 +7,27 @@ tqdm.pandas()
 
 from sdv.metadata import SingleTableMetadata
 
-import networkx as nx
-import stellargraph as sg
-from stellargraph.mapper import GraphWaveGenerator
-from stellargraph.mapper import AdjacencyPowerGenerator
-from stellargraph.layer import WatchYourStep
-from stellargraph.losses import graph_log_likelihood
-from stellargraph.utils import plot_history
-
-from sklearn.decomposition import PCA
-
-from sklearn.cluster import KMeans
-from sklearn.preprocessing import StandardScaler
-
-from tensorflow.keras import Model, regularizers
-import tensorflow as tf
-
 from modified_sitepackages.sdv.single_table import CTGANSynthesizer
 
 from modified_sitepackages.sdv.evaluation.single_table import run_diagnostic, evaluate_quality, evaluate_similarity
 
 import wandb
 
-from matplotlib import pyplot as plt
-
 ## setup wandb
 #wandb.login()
 wandb_project = "FinancialDataGeneration_CTGAN_Evaluation"
 
-min_number_edges_per_node = 2
-embedding_generator = "watchyourstep"
 embedding_dim = 6
 
-add_transaction_clusters = True
 
-data_path = "../data/RealBank/transformed_pca_extd_df.csv"
+data_path = "../../data/RealBank/transformed_pca_extd_df.csv"
 
-if not os.path.exists("../model/"):
-    os.makedirs("../model/")
-if not os.path.exists("../synth/"):
-    os.makedirs("../synth/")
+if not os.path.exists("./model/"):
+    os.makedirs("./model/")
+if not os.path.exists("./synth/"):
+    os.makedirs("./synth/")
 
-## replace source_id and target_id with graph structure of ids
-if not os.path.exists("../working/transformed_pca_extd_df_graph.csv"):
-    real_data = pd.read_csv(data_path, index_col=0)
-    real_data = real_data.reset_index()
-    real_data["index"] = pd.to_numeric(real_data["index"]).astype(int)
-    real_data = real_data.rename(columns={"index": "timeIndicator"})
-
-    if add_transaction_clusters:
-        if real_data.shape[0] > 500000:
-            cl_data = StandardScaler().fit_transform(real_data.drop(["source_id", "target_id"], axis=1).sample(100000))
-        else:
-            cl_data = StandardScaler().fit_transform(real_data.drop(["source_id", "target_id"], axis=1))
-        cl = KMeans(n_clusters=12)
-        cl.fit(cl_data)
-        real_data["transaction_clusters"] = cl.predict(real_data.drop(["source_id", "target_id"], axis=1))
-        #print(len(set(cl.labels_)) - (1 if -1 in cl.labels_ else 0))
-
-    G = nx.DiGraph()
-    edgelist = real_data.loc[real_data["source_id"] != real_data["target_id"]].groupby(by=["source_id", "target_id"])["timeIndicator"].count().reset_index()
-    edgelist = edgelist.rename(columns={"timeIndicator": "count"}).values.tolist()
-    edgelist = [(x, y, {"count": z}) for x, y, z in edgelist]
-    G.add_edges_from(edgelist)
-    node_degree_dict = nx.degree(G)
-    G = nx.subgraph(G, [x for x in G.nodes() if node_degree_dict[x] >= min_number_edges_per_node])
-    S = sg.StellarGraph.from_networkx(G)
-
-    if embedding_generator == "graphwave":
-        # use graphwave to embed nodes (https://arxiv.org/pdf/1710.10321)
-        sample_points = np.linspace(0, 100, 64).astype(np.float32)
-        degree = 20
-        scales = [5, 10]
-        generator = GraphWaveGenerator(S, scales=scales, degree=degree)
-        embeddings_dataset = generator.flow(node_ids=S.nodes(), sample_points=sample_points, batch_size=1, repeat=False)
-        embeddings = [x.numpy() for x in embeddings_dataset]
-        embeddings = np.squeeze(np.array(embeddings), axis=1)
-        pca = PCA(n_components=embedding_dim)
-        embeddings = pca.fit_transform(embeddings)
-
-    elif embedding_generator == "watchyourstep":
-        # use watchyourstep to embed nodes (https://arxiv.org/pdf/1710.09599)
-        generator = AdjacencyPowerGenerator(S, num_powers=10)
-        wys = WatchYourStep(
-            generator,
-            num_walks=80,
-            embedding_dimension= embedding_dim,
-            attention_regularizer=regularizers.l2(0.5),
-        )
-        x_in, x_out = wys.in_out_tensors()
-        model = Model(inputs=x_in, outputs=x_out)
-        model.compile(loss=graph_log_likelihood, optimizer=tf.keras.optimizers.Adam(1e-3))
-        batch_size = 64
-        train_gen = generator.flow(batch_size=batch_size, num_parallel_calls=10)
-        history = model.fit(train_gen, epochs=100, verbose=1, steps_per_epoch=int(len(S.nodes()) // batch_size))
-        embeddings = wys.embeddings()
-        plot_history(history)
-        plt.show()
-    else:
-        raise ValueError("Unknown embedding generator")
-
-    # print(pca.explained_variance_ratio_)
-    embeddings_dict = dict(zip(S.nodes(), embeddings))
-
-    real_data = real_data.loc[real_data["source_id"].isin(S.nodes()) & real_data["target_id"].isin(S.nodes())].reset_index(drop=True)
-    embeddings_source = pd.concat((pd.DataFrame(S.nodes(), columns= ["source_id"]), pd.DataFrame(embeddings, columns= [f"source_id_{i}" for i in range(embedding_dim)])), axis=1)
-    embeddings_target = pd.concat((pd.DataFrame(S.nodes(), columns=["target_id"]), pd.DataFrame(embeddings, columns=[f"target_id_{i}" for i in range(embedding_dim)])), axis=1)
-    real_data = pd.merge(real_data, embeddings_source, left_on= "source_id", right_on= "source_id", how= "left")
-    real_data = pd.merge(real_data, embeddings_target, left_on= "target_id", right_on= "target_id", how= "left")
-
-    real_data.to_csv("../working/transformed_pca_extd_df_graph.csv", index=False)
-
-real_data = pd.read_csv("../working/transformed_pca_extd_df_graph.csv")
+real_data = pd.read_csv("./working/transformed_pca_extd_df_graph.csv")
 real_data = real_data.reset_index()
 real_data["index"] = pd.to_numeric(real_data["index"]).astype(int)
 real_data = real_data.rename(columns={"index": "timeIndicator"})
@@ -128,9 +37,9 @@ real_data = real_data.drop(columns=["source_id", "target_id"])
 
 metadata = SingleTableMetadata()
 metadata.detect_from_dataframe(real_data)
-if os.path.exists("../working/transformed_pca_extd_df_graph_metadata_table.json"):
-    os.remove("../working/transformed_pca_extd_df_graph_metadata_table.json")
-metadata.save_to_json("../working/transformed_pca_extd_df_graph_metadata_table.json")
+if os.path.exists("./working/transformed_pca_extd_df_graph_metadata_table.json"):
+    os.remove("./working/transformed_pca_extd_df_graph_metadata_table.json")
+metadata.save_to_json("./working/transformed_pca_extd_df_graph_metadata_table.json")
 
 ## CTGAN
 ### Priority 1
@@ -139,10 +48,10 @@ synthesizer = CTGANSynthesizer(metadata, embedding_dim= 64, generator_dim= [512,
                                 generator_lr= 0.00008178, generator_decay= 0.007982, discriminator_lr= 0.000178, discriminator_decay= 0.004898, batch_size= 5000,
                                 epochs= 219, discriminator_steps= 6, pac= 2, verbose=True, use_wandb=True)
 synthesizer.fit(data=real_data)
-synthesizer.save("../model/CTGAN.pkl")
-synthesizer.load("../model/CTGAN.pkl")
+synthesizer.save("./model/CTGAN.pkl")
+synthesizer.load("./model/CTGAN.pkl")
 synthetic_data = synthesizer.sample(num_rows=100000)
-synthetic_data.to_csv("../synth/CTGAN_synthetic_data.csv", index=False)
+synthetic_data.to_csv("./synth/CTGAN_synthetic_data.csv", index=False)
 diagnostic_report = run_diagnostic(real_data=real_data, synthetic_data=synthetic_data, metadata=metadata)
 quality_report = evaluate_quality(real_data=real_data, synthetic_data=synthetic_data, metadata=metadata)
 similarity_report = evaluate_similarity(real_data= real_data, synthetic_data= synthetic_data, metadata= metadata)

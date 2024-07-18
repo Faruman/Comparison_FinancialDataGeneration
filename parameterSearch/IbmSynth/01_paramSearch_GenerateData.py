@@ -1,3 +1,5 @@
+import os
+
 import pandas as pd
 import numpy as np
 
@@ -30,6 +32,8 @@ embedding_dim = 6
 
 add_transaction_clusters = True
 
+if not os.path.exists("./working/"):
+    os.makedirs("./working/")
 
 if add_transaction_clusters:
     cluster_data = real_data

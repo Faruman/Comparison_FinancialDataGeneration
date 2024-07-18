@@ -12,9 +12,8 @@ from modified_sitepackages.clusteringMethods.methods import agglomerative, kMean
 from modified_sitepackages.clusteringMethods.meta import dualClustering
 from sklearn.preprocessing import StandardScaler, LabelEncoder, OneHotEncoder
 
-#data_dict = {"UnionBank": "data/RealBank/transformed_pca_extd_df.csv",
-#             "IbmSynth": "data/IbmSynth/transformed_df.csv"}
-data_dict = {"IbmSynth": "data/IbmSynth/transformed_df.csv"}
+data_dict = {"UnionBank": "data/RealBank/transformed_pca_extd_df.csv",
+             "IbmSynth": "data/IbmSynth/transformed_df.csv"}
 
 for name, path in data_dict.items():
 

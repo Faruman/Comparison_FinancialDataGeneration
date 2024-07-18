@@ -2,13 +2,14 @@
 venv
 
 data
-synth
 working
 model
 
 wandb
 parameterSearch/RealBank/wandb
-evaluation/wandb
+evaluation/RealBank/wandb
 
 *_hidden*
 */working/*
+*/synth/*
+*/model/*

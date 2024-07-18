@@ -32,13 +32,13 @@ embedding_dim = 6
 
 add_transaction_clusters = True
 
-data_path = "../data/RealBank/transformed_pca_extd_df.csv"
+data_path = "../../data/RealBank/transformed_pca_extd_df.csv"
 
-if not os.path.exists("../working/"):
-    os.makedirs("../working/")
+if not os.path.exists("./working/"):
+    os.makedirs("./working/")
 
 ## replace source_id and target_id with graph structure of ids
-if not os.path.exists("../working/test.csv"):
+if not os.path.exists("./working/test.csv"):
     real_data = pd.read_csv(data_path, index_col=0)
     real_data = real_data.reset_index()
     real_data["index"] = pd.to_numeric(real_data["index"]).astype(int)
@@ -122,4 +122,4 @@ if not os.path.exists("../working/test.csv"):
     real_data = pd.merge(real_data, embeddings_source, left_on= "source_id", right_on= "source_id", how= "left")
     real_data = pd.merge(real_data, embeddings_target, left_on= "target_id", right_on= "target_id", how= "left")
 
-    real_data.to_csv("../working/transformed_pca_extd_df_graph.csv", index=False)
+    real_data.to_csv("./working/transformed_pca_extd_df_graph.csv", index=False)
