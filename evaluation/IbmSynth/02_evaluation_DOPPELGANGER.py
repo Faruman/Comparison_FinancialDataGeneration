@@ -17,6 +17,7 @@ import wandb
 #wandb.login()
 wandb_project = "FinancialDataGeneration_DOPPELGANGER_Evaluation"
 
+min_number_edges_per_node = 2
 embedding_dim = 6
 
 

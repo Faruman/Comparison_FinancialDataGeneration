@@ -17,6 +17,7 @@ import wandb
 #wandb.login()
 wandb_project = "EvalGenerationAlgorithms_graph"
 
+min_number_edges_per_node = 2
 embedding_dim = 6
 
 
@@ -54,7 +55,7 @@ def truncate_sequence(group, max_len, min_len, id_column):
         return out
     else:
         return pd.DataFrame(columns=group.columns)
-real_data = real_data.groupby(["source_id"] + context_columns).progress_apply(truncate_sequence, max_len= 30, min_len= 2, id_column= "source_id").reset_index(drop=True)
+real_data = real_data.groupby(["source_id"] + context_columns).progress_apply(truncate_sequence, max_len= 30, min_len= min_number_edges_per_node, id_column= "source_id").reset_index(drop=True)
 
 ## Test CTGAN
 sweep_config = {
