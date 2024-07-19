@@ -37,7 +37,7 @@ if os.path.exists("./working/transformed_pca_extd_df_graph_metadata_table.json")
 metadata.save_to_json("./working/transformed_pca_extd_df_graph_metadata_table.json")
 
 
-wandb.init(project= wandb_project, entity="financialDataGeneration")
+wandb.init(project= wandb_project, entity="financialDataGeneration", tags= "IbmSynth")
 synthesizer = CTGANSynthesizer(metadata, embedding_dim= 256, generator_dim= [256,256], discriminator_dim= [512,512],
                                 generator_lr= 0.00007396, generator_decay= 0.01233, discriminator_lr= 0.0001012, discriminator_decay= 0.00537, batch_size= 5000,
                                 epochs= 457, discriminator_steps= 6, pac= 1, verbose=True, use_wandb=True)
