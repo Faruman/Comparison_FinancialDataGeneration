@@ -26,15 +26,12 @@ if not os.path.exists("./synth/"):
     os.makedirs("./synth/")
 
 real_data = pd.read_csv("./working/transformed_df_graph.csv")
-real_data = real_data.reset_index()
-real_data["index"] = pd.to_numeric(real_data["index"]).astype(int)
-real_data = real_data.rename(columns={"index": "timeIndicator"})
-
-real_data = real_data.drop(columns= ["timeIndicator"])
+real_data["timeIndicator"] = pd.to_datetime(real_data["timeIndicator"])
 real_data = real_data.drop(columns=["source_id", "target_id"])
 
 metadata = SingleTableMetadata()
 metadata.detect_from_dataframe(real_data)
+metadata.update_column("transaction_clusters", sdtype='categorical')
 if os.path.exists("./working/transformed_pca_extd_df_graph_metadata_table.json"):
     os.remove("./working/transformed_pca_extd_df_graph_metadata_table.json")
 metadata.save_to_json("./working/transformed_pca_extd_df_graph_metadata_table.json")
