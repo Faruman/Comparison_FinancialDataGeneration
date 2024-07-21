@@ -2407,7 +2407,13 @@ class DGAN:
             Output of the GAN discriminator.
         """
 
-        batch = [index for index in batch if not torch.isnan(index).any()]
+        if not all([True for index in batch if not torch.isnan(index).any()]):
+            include_idx = (torch.stack(
+                [~torch.isnan(index).any(axis=[i for i in list(range(len(index.shape)))[1:]]) for index in batch], dim=1)).any(dim=1)
+            batch = [index[include_idx] for index in batch if not torch.isnan(index).any()]
+        else:
+            batch = [index for index in batch if not torch.isnan(index).any()]
+
         inputs = list(batch)
         # Flatten the features
 
