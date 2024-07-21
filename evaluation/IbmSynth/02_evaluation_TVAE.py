@@ -39,7 +39,7 @@ if os.path.exists("./working/transformed_pca_extd_df_graph_metadata_table.json")
 metadata.save_to_json("./working/transformed_pca_extd_df_graph_metadata_table.json")
 
 
-wandb.init(project=wandb_project, entity="financialDataGeneration", tags= "IbmSynth")
+wandb.init(project=wandb_project, entity="financialDataGeneration", tags= ["IbmSynth"])
 synthesizer = TVAESynthesizer(metadata, embedding_dim= 256, compress_dims= [256,256], decompress_dims= [512,512],
                                 l2scale= 0.0003627, loss_factor= 3, learning_rate= 0.0008652,
                                 epochs= 149, batch_size= 5000, verbose=True, use_wandb=True)

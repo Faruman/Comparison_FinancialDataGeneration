@@ -42,7 +42,7 @@ if os.path.exists("./working/transformed_pca_extd_df_graph_metadata_table.json")
 metadata.save_to_json("./working/transformed_pca_extd_df_graph_metadata_table.json")
 
 
-wandb.init(project=wandb_project, entity="financialDataGeneration")
+wandb.init(project=wandb_project, entity="financialDataGeneration", tags=["RealBank"])
 synthesizer = WGANGP_DRSSynthesizer(metadata, embedding_dim= 64, generator_dim= [256,512,1048], discriminator_dim= [512,256,128],
                                 generator_lr= 0.0006069, generator_decay= 0.03474, discriminator_lr= 0.0007963, discriminator_decay= 0.04883, batch_size= 5000,
                                 epochs= 921, discriminator_steps= 12, pac= 15, dsr_epsilon= 0.0007755, dsr_gamma_percentile= 0.80, verbose=True, use_wandb=True)

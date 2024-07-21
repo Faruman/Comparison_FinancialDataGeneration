@@ -66,7 +66,7 @@ def truncate_sequence(group, max_len, min_len, id_column):
 real_data = real_data.groupby(["source_id"] + context_columns).progress_apply(truncate_sequence, max_len= 30, min_len= min_number_edges_per_node, id_column= "source_id").reset_index(drop=True)
 
 
-wandb.init(project=wandb_project, entity="financialDataGeneration", tags= "IbmSynth")
+wandb.init(project=wandb_project, entity="financialDataGeneration", tags= ["IbmSynth"])
 synthesizer = DOPPELGANGERSynthesizer(metadata, context_columns= context_columns, max_sequence_len= 30, sample_len= 10, feature_noise_dim = 11, attribute_noise_dim= 10, attribute_num_layers = 2,
                                       attribute_num_units = 348, feature_num_layers = 5, feature_num_units = 221, gradient_penalty_coef = 8.731,
                                       attribute_gradient_penalty_coef = 13.948, attribute_loss_coef = 0.7085, generator_learning_rate = 0.001833, generator_beta1 = 0.6045,

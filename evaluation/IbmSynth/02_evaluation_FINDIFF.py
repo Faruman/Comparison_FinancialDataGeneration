@@ -38,7 +38,7 @@ if os.path.exists("./working/transformed_pca_extd_df_graph_metadata_table.json")
 metadata.save_to_json("./working/transformed_pca_extd_df_graph_metadata_table.json")
 
 
-wandb.init(project=wandb_project, entity="financialDataGeneration", tags= "IbmSynth")
+wandb.init(project=wandb_project, entity="financialDataGeneration", tags= ["IbmSynth"])
 synthesizer = FINDIFFSynthesizer(metadata, cat_embedding_dim= 4, mlp_dim= [2048,2048,2048], mlp_activation= "tanh",
                                 diffusion_steps= 831, diffusion_beta_start= 0.00006119, diffusion_beta_end= 0.006151,
                                 mlp_lr= 0.0006055, epochs= 498, batch_size= 5000, verbose=True, use_wandb=True)
