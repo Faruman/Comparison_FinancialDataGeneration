@@ -2701,7 +2701,7 @@ class TIMEGANSynthesizer(LossValuesMixin, BaseSynthesizer):
         return SingleTableMetadata.load_from_dict(context_metadata_dict)
 
     def __init__(self, metadata, max_sequence_len: int, enforce_min_max_values=True, enforce_rounding=False,
-                 locales=['en_US'], context_columns=None, max_seq_len= 24, recursive_module= "gru", hidden_dim= 24, num_layers= 3,
+                 locales=['en_US'], context_columns=None, recursive_module= "gru", hidden_dim= 24, num_layers= 3,
                  metric_iteration=10, beta1= 0.9, learning_rate= 0.001, gamma= 1, encoder_loss_weight_s = 0.1,
                  normalization: Normalization = Normalization.ZERO_ONE, apply_feature_scaling: bool = True, apply_example_scaling: bool = True, binary_encoder_cutoff: int = 150,
                  encoder_loss_weight_0 = 10, generator_loss_weight = 100, generator_steps= 2,

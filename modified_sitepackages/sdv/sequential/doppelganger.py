@@ -2294,6 +2294,7 @@ class DGAN:
                         )
 
                     scaler.scale(loss).backward(retain_graph=True)
+                    torch.nn.utils.clip_grad_norm_(self.feature_discriminator.parameters(), 1.0e-2, norm_type=2.0)
                     scaler.step(opt_discriminator)
                     scaler.update()
 
@@ -2325,6 +2326,7 @@ class DGAN:
                             )
 
                         scaler.scale(discriminator_loss).backward(retain_graph=True)
+                        torch.nn.utils.clip_grad_norm_(self.attribute_discriminator.parameters(), 1.0e-2, norm_type=2.0)
                         scaler.step(opt_attribute_discriminator)
                         scaler.update()
 
@@ -2354,6 +2356,7 @@ class DGAN:
                             generator_loss = -torch.mean(generated_output)
 
                     scaler.scale(generator_loss).backward()
+                    torch.nn.utils.clip_grad_norm_(self.generator.parameters(), 1.0e-2, norm_type=2.0)
                     scaler.step(opt_generator)
                     scaler.update()
 
