@@ -2407,12 +2407,14 @@ class DGAN:
             Output of the GAN discriminator.
         """
 
-        if not all([True for index in batch if not torch.isnan(index).any()]):
-            include_idx = (torch.stack(
-                [~torch.isnan(index).any(axis=[i for i in list(range(len(index.shape)))[1:]]) for index in batch], dim=1)).any(dim=1)
-            batch = [index[include_idx] for index in batch if not torch.isnan(index).any()]
-        else:
-            batch = [index for index in batch if not torch.isnan(index).any()]
+        # include_idx = (torch.stack([~torch.isnan(index).any(axis=[i for i in list(range(len(index.shape)))[1:]]) for index in batch],dim=1)).any(dim=1)
+        # batch = [index[include_idx] for index in batch if not torch.isnan(index).any()]
+
+        batch = [torch.where(torch.isnan(index), torch.where(torch.isnan(torch.nanmean(index, dim=0)), torch.rand(1)[0], torch.nanmean(index, dim=0)), index) for index in batch]
+
+        # batch = [torch.nan_to_num(index, nan=0, posinf=0, neginf=0) for index in batch]
+
+        # batch = [index for index in batch if not torch.isnan(index).any()]
 
         inputs = list(batch)
         # Flatten the features
@@ -2422,6 +2424,11 @@ class DGAN:
         input = torch.cat(inputs, dim=1)
 
         output = self.feature_discriminator(input)
+
+        # reconstructed_output = torch.zeros(output.shape, dtype= output.dtype, device= output.device)
+        # reconstructed_output[include_idx] = output
+        # output = reconstructed_output
+
         return output
 
     def _discriminate_attributes(self, batch) -> torch.Tensor:
@@ -2434,8 +2441,8 @@ class DGAN:
         Returns:
             Output for GAN attribute discriminator.
         """
-        batch = [index for index in batch if not torch.isnan(index).any()]
-        #batch = [torch.nan_to_num(index) for index in batch]
+        #batch = [index for index in batch if not torch.isnan(index).any()]
+        batch = [torch.where(torch.isnan(index), torch.where(torch.isnan(torch.nanmean(index, dim=0)), torch.rand(1)[0], torch.nanmean(index, dim=0)), index) for index in batch]
 
         if not self.attribute_discriminator:
             raise InternalError(
@@ -3532,7 +3539,7 @@ class DOPPELGANGERSynthesizer(LossValuesMixin, BaseSynthesizer):
         self._model = DGAN(**self._model_kwargs)
         self._model.train_dataframe(attribute_columns= self.context_columns, feature_columns= self.data_columns, time_column= self._sequence_index, example_id_column= self._sequence_key[0], df= processed_data, df_style= DfStyle.LONG)
 
-    def sample(self, num_rows, conditions= None):
+    def sample(self, num_rows, num_entities= None, conditions= None):
         """Sample new sequences.
 
         Args:
@@ -3548,14 +3555,17 @@ class DOPPELGANGERSynthesizer(LossValuesMixin, BaseSynthesizer):
         """
 
         if conditions is None:
-            num_sequences = math.ceil(num_rows / self._max_sequence_len)
-            fake = self._model.generate_dataframe(num_sequences)
+            if not num_entities:
+                num_entities = math.ceil(num_rows / self._max_sequence_len)
+            if self._max_sequence_len * num_entities < num_rows:
+                RuntimeError("Max sequence lenght * Num entities must be larger then num rows.")
+            fake = self._model.generate_dataframe(num_entities)
             anonym_sequence_key = self._sequenceKey_processor._hyper_transformer.create_anonymized_columns(
-                num_rows=num_sequences,
+                num_rows=num_entities,
                 column_names= self._sequence_key
             )
             sequence_key_dict = dict(zip(fake[self._sequence_key[0]].unique(), anonym_sequence_key.transpose().values[0]))
             fake[self._sequence_key] = fake[self._sequence_key].replace(sequence_key_dict)
-            return fake[:num_rows]
+            return fake.sample(num_rows)
 
         raise NotImplementedError("DOPPELGANGERSynthesizer doesn't support conditional sampling.")
