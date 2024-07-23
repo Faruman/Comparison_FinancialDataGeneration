@@ -7,6 +7,7 @@ from .tvae import TVAESynthesizer
 from .tvae_parallel import TVAESynthesizer as TVAESynthesizer_parallel
 from .wgangp import WGANGPSynthesizer, WGANGP_DRSSynthesizer
 from .findiff import FINDIFFSynthesizer
+from .gmm import GMMSynthesizer
 
 __all__ = (
     'GaussianCopulaSynthesizer',
@@ -16,5 +17,6 @@ __all__ = (
     'CopulaGANSynthesizer',
     'WGANGPSynthesizer',
     'WGANGP_DRSSynthesizer',
-    'FINDIFFSynthesizer'
+    'FINDIFFSynthesizer',
+    'GMMSynthesizer'
 )
