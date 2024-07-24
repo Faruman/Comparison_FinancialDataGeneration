@@ -5,7 +5,7 @@ import pandas as pd
 from sdv.metadata import SingleTableMetadata
 from modified_sitepackages.sdv.evaluation.single_table import evaluate_quality
 from sdmetrics.single_table import NewRowSynthesis
-from sklearn.preprocessing import StandardScaler
+from sklearn.preprocessing import StandardScaler, OneHotEncoder
 from scipy.spatial.distance import cdist
 
 
@@ -39,9 +39,21 @@ for model in models:
     )
 
     # Evaluate Privacy
+    real_data_oh = pd.DataFrame()
+    synthetic_data_oh = pd.DataFrame()
+    for column_name, sdtype in metadata.columns:
+        if sdtype["sdtype"] == 'categorical':
+            ohe = OneHotEncoder()
+            temp = pd.DataFrame(ohe.fit_transform(real_data[column_name].values.reshape(-1, 1)).todense(), columns= ["{}_{}".format(column_name, i) for i in range(real_data[column_name].nunique())], index= real_data.index)
+            real_data_oh = pd.concat((real_data_oh, temp))
+            temp = pd.DataFrame(ohe.transform(synthetic_data[column_name].values.reshape(-1, 1)).todense(), columns=["{}_{}".format(column_name, i) for i in range(real_data[column_name].nunique())], index=synthetic_data.index)
+            synthetic_data_oh = pd.concat((synthetic_data_oh, temp))
+        else:
+            real_data_oh = pd.concat((real_data_oh, real_data[[column_name]]))
+            synthetic_data_oh = pd.concat((synthetic_data_oh, synthetic_data[[column_name]]))
     scaler = StandardScaler()
-    real_data_scaled = pd.DataFrame(scaler.fit_transform(real_data[keep_col]), columns=keep_col)
-    synthetic_data_scaled = pd.DataFrame(scaler.transform(synthetic_data[keep_col]), columns=keep_col)
+    real_data_scaled = pd.DataFrame(scaler.fit_transform(real_data_oh), columns=real_data_oh.columns)
+    synthetic_data_scaled = pd.DataFrame(scaler.transform(synthetic_data_oh), columns=synthetic_data_oh.columns)
     sample_size = 100
     i = 0
     min_distances = np.array([])

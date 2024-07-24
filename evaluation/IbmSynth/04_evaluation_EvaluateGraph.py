@@ -7,14 +7,15 @@ import pandas as pd
 
 from scipy.spatial.distance import pdist, cdist
 
-from sklearn.cluster import KMeans
+from sklearn.cluster import KMeans, MiniBatchKMeans
+from sklearn.preprocessing import StandardScaler
 
 
 models = ['DOPPELGANGER', 'FINDIFF', 'TVAE', 'WGAN', 'CTGAN']
 keep_col = ['Receiving Currency', 'Amount Paid', 'Payment Currency', 'Payment Format', 'Is Laundering', 'transaction_clusters']
 
 real_data = pd.read_csv("./working/transformed_df_graph.csv")
-real_data = real_data.sample(1000000)
+#real_data = real_data.sample(1000000)
 ## get the unique nodes for real data
 real_target_nodes = real_data[["target_id_{}".format(i) for i in range(6)]]
 real_target_nodes.columns = ["id_{}".format(i) for i in range(6)]
@@ -23,9 +24,11 @@ real_source_nodes.columns = ["id_{}".format(i) for i in range(6)]
 real_nodes = pd.concat((real_target_nodes, real_source_nodes), axis= 0).drop_duplicates()
 num_real_nodes = real_nodes.shape[0]
 ## calculate average distance between the nodes for real data
+scaler = StandardScaler()
+real_nodes_scaled = pd.DataFrame(scaler.fit_transform(real_nodes), columns=real_nodes.columns)
 real_nodes_avg_distance = []
-for i, chunk in tqdm(real_nodes.groupby(np.arange(len(real_nodes))//10000), desc= "Calculating Average Distance between Real Nodes"):
-    real_nodes_avg_distance.append(np.mean(cdist(real_nodes.drop(chunk.index).values, chunk.values, 'euclid')))
+for i, chunk in tqdm(real_nodes_scaled.groupby(np.arange(len(real_nodes_scaled))//10000), desc= "Calculating Average Distance between Real Nodes"):
+    real_nodes_avg_distance.append(np.mean(cdist(real_nodes_scaled.drop(chunk.index).values, chunk.values, 'euclid')))
 real_nodes_avg_distance = np.mean(real_nodes_avg_distance)
 
 for model in models:
@@ -50,9 +53,10 @@ for model in models:
     synthetic_nodes = pd.concat((synthetic_target_nodes, synthetic_source_nodes), axis=0).drop_duplicates()
 
     synth_nodes_avg_distances = {}
+    synthetic_nodes_scaled = pd.DataFrame(scaler.fit_transform(synthetic_nodes), columns=synthetic_nodes.columns)
     for n_clusters in tqdm(range(int(num_real_nodes*0.5), int(num_real_nodes*2), 10000), desc="Search for optimal Number of Nodes"):
-        kms = KMeans(n_clusters= n_clusters, n_init= "auto")
-        kms.fit(synthetic_nodes)
+        kms = MiniBatchKMeans(n_clusters= n_clusters, init= "k-means++", n_init= "auto", batch_size= 4096,  n_jobs= -1)
+        kms.fit(synthetic_nodes_scaled)
         new_synthetic_nodes = kms.cluster_centers_
 
         synthetic_nodes_avg_distance = []

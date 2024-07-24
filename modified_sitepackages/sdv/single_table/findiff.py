@@ -637,7 +637,7 @@ class FINDIFF(BaseSynthesizer):
             for i in reversed(range(0, self._diffusion_steps)):
                 # init diffusion timesteps
                 timesteps = torch.full((n,), i, dtype=torch.long, device= self._device)
-                model_out = self._synthesizer_model(x= samples.float(), timesteps=timesteps)
+                model_out = self._synthesizer_model(x= samples.float(), timesteps=timesteps).to(self._device)
                 samples = self._diffuser_model.p_sample_gauss(model_out, samples, timesteps)
 
         # split sample into numeric and categorical parts
