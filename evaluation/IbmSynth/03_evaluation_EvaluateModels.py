@@ -1,3 +1,4 @@
+import os.path
 import pickle
 import numpy as np
 import pandas as pd
@@ -12,16 +13,19 @@ from scipy.spatial.distance import cdist
 models = ['DOPPELGANGER', 'FINDIFF', 'TVAE', 'WGAN', 'CTGAN']
 keep_col = ['Receiving Currency', 'Amount Paid', 'Payment Currency', 'Payment Format', 'Is Laundering', 'transaction_clusters']
 
-results_df = pd.DataFrame()
+real_data = pd.read_csv("./working/transformed_df_graph.csv")
+
+if os.path.exists("./working/evaluation.xlsx"):
+    results_df = pd.read_excel("./working/evaluation.xlsx")
+else:
+    results_df = pd.DataFrame()
 
 for model in models:
     print("Currently Processing Model: {}".format(model))
     with open("./model/{}.pkl".format(model), 'rb') as file:
         synthesizer = pickle.load(file)
 
-    synthetic_data = synthesizer.sample(num_rows=100000)
-
-    real_data = pd.read_csv("./working/transformed_df_graph.csv")
+    synthetic_data = synthesizer.sample(num_rows= real_data.shape[0])
 
     metadata = SingleTableMetadata()
     metadata.detect_from_dataframe(real_data[keep_col])
@@ -70,5 +74,8 @@ for model in models:
 
     # Store the results per model
     results_df = pd.concat((results_df, pd.DataFrame({**fidelity_dict, **synthesis_dict, **privacy_dict}, index=[model])))
+
+    results_df.drop_duplicates()
+    results_df.to_excel("./working/evaluation.xlsx", index=False)
 
 results_df.to_excel("./working/evaluation.xlsx", index=False)
