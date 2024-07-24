@@ -55,7 +55,7 @@ for model in models:
     synth_nodes_avg_distances = {}
     synthetic_nodes_scaled = pd.DataFrame(scaler.fit_transform(synthetic_nodes), columns=synthetic_nodes.columns)
     for n_clusters in tqdm(range(int(num_real_nodes*0.5), int(num_real_nodes*2), 10000), desc="Search for optimal Number of Nodes"):
-        kms = MiniBatchKMeans(n_clusters= n_clusters, init= "k-means++", n_init= "auto", batch_size= 4096,  n_jobs= -1)
+        kms = MiniBatchKMeans(n_clusters= n_clusters, init= "k-means++", n_init= "auto", batch_size= 4096)
         kms.fit(synthetic_nodes_scaled)
         new_synthetic_nodes = kms.cluster_centers_
 
