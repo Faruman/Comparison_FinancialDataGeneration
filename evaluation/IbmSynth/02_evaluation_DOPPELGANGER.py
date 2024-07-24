@@ -67,12 +67,12 @@ real_data = real_data.groupby(["source_id"] + context_columns).progress_apply(tr
 
 
 wandb.init(project=wandb_project, entity="financialDataGeneration", tags= ["IbmSynth"])
-synthesizer = DOPPELGANGERSynthesizer(metadata, context_columns= context_columns, max_sequence_len= 30, sample_len= 10, feature_noise_dim = 11, attribute_noise_dim= 10, attribute_num_layers = 2,
-                                      attribute_num_units = 348, feature_num_layers = 5, feature_num_units = 221, gradient_penalty_coef = 8.731,
-                                      attribute_gradient_penalty_coef = 13.948, attribute_loss_coef = 0.7085, generator_learning_rate = 0.001833, generator_beta1 = 0.6045,
-                                      discriminator_learning_rate = 0.001539, discriminator_beta1 = 0.7583, attribute_discriminator_learning_rate = 0.0002408,
-                                      attribute_discriminator_beta1 = 0.5709, discriminator_rounds = 7, batch_size= 5000,
-                                      epochs= 627, verbose= True, use_wandb= True)
+synthesizer = DOPPELGANGERSynthesizer(metadata, context_columns= context_columns, max_sequence_len= 30, sample_len= 5, feature_noise_dim = 11, attribute_noise_dim= 10, attribute_num_layers = 2,
+                                      attribute_num_units = 406, feature_num_layers = 5, feature_num_units = 221, gradient_penalty_coef = 5.593,
+                                      attribute_gradient_penalty_coef = 11.572, attribute_loss_coef = 2.056, generator_learning_rate = 0.00105, generator_beta1 = 0.5233,
+                                      discriminator_learning_rate = 0.001743, discriminator_beta1 = 0.7378, attribute_discriminator_learning_rate = 0.0001326,
+                                      attribute_discriminator_beta1 = 0.6105, discriminator_rounds = 1, batch_size= 5000,
+                                      epochs= 731, verbose= True, use_wandb= True)
 synthesizer.fit(data=real_data)
 synthesizer.save("./model/DOPPELGANGER.pkl")
 synthesizer.load("./model/DOPPELGANGER.pkl")
