@@ -23,19 +23,18 @@ for model in models:
 
     real_data = pd.read_csv("./working/transformed_df_graph.csv")
 
-    # Evaluate Fidelity
     metadata = SingleTableMetadata()
     metadata.detect_from_dataframe(real_data[keep_col])
+
+    # Evaluate Fidelity
     quality_report = evaluate_quality(real_data=real_data[keep_col], synthetic_data=synthetic_data[keep_col], metadata=metadata)
     fidelity_dict = {**quality_report.get_properties().set_index("Property")["Score"].to_dict()}
 
-
-
     # Evaluate Synthesis
     synthesis_dict = NewRowSynthesis.compute_breakdown(
-        real_data[keep_col],
-        synthetic_data[keep_col],
-        metadata,
+        real_data= real_data[keep_col],
+        synthetic_data= synthetic_data[keep_col],
+        metadata= metadata,
         numerical_match_tolerance=0.01
     )
 
@@ -53,11 +52,11 @@ for model in models:
         # Find the minimum distance for each synthetic record
         min_distances = np.concatenate((min_distances, distances.min(axis=1)))
         i += sample_size
-
-    # DCR
     mean_dcr = np.mean(min_distances)
     median_dcr = np.median(min_distances)
     privacy_dict = {"Privacy Mean": mean_dcr, "Privacy Median": median_dcr}
 
+    # Store the results per model
     results_df = pd.concat((results_df, pd.DataFrame({**fidelity_dict, **synthesis_dict, **privacy_dict}, index=[model])))
 
+results_df.to_excel("./working/evaluation.xlsx", index=False)

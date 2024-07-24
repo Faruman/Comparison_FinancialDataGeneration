@@ -87,7 +87,7 @@ sweep_id = wandb.sweep(sweep=sweep_config, project="FinancialDataGeneration_DOPP
 ### Priority 1
 def main():
     wandb.init(project="FinancialDataGeneration_DOPPELGANGER_ParamSearch", entity="financialDataGeneration")
-    synthesizer = DOPPELGANGERSynthesizer(metadata, context_columns= context_columns, max_sequence_len= 30, sample_len= wandb.config["sample_len"], feature_noise_dim = wandb.config["feature_noise_dim"], attribute_num_layers = wandb.config["attribute_num_layers"],
+    synthesizer = DOPPELGANGERSynthesizer(metadata, context_columns= context_columns, max_sequence_len= 30, sample_len= wandb.config["sample_len"], feature_noise_dim = wandb.config["feature_noise_dim"], attribute_noise_dim= wandb.config["attribute_noise_dim"], attribute_num_layers = wandb.config["attribute_num_layers"],
                                           attribute_num_units = wandb.config["attribute_num_units"], feature_num_layers = wandb.config["feature_num_layers"], feature_num_units = wandb.config["feature_num_units"], gradient_penalty_coef = wandb.config["gradient_penalty_coef"],
                                           attribute_gradient_penalty_coef = wandb.config["attribute_gradient_penalty_coef"], attribute_loss_coef = wandb.config["attribute_loss_coef"], generator_learning_rate = wandb.config["generator_learning_rate"], generator_beta1 = wandb.config["generator_beta1"],
                                           discriminator_learning_rate = wandb.config["discriminator_learning_rate"], discriminator_beta1 = wandb.config["discriminator_beta1"], attribute_discriminator_learning_rate = wandb.config["attribute_discriminator_learning_rate"],
