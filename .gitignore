@@ -10,7 +10,6 @@ parameterSearch/RealBank/wandb
 evaluation/RealBank/wandb
 
 *_hidden*
-*/working/*
-*/synth/*
-*synth*
-*/model/*
+**/working
+**/synth
+**/model
