@@ -15,7 +15,7 @@ models = ['DOPPELGANGER', 'FINDIFF', 'TVAE', 'WGAN', 'CTGAN']
 keep_col = ['Receiving Currency', 'Amount Paid', 'Payment Currency', 'Payment Format', 'Is Laundering', 'transaction_clusters']
 
 real_data = pd.read_csv("./working/transformed_df_graph.csv")
-#real_data = real_data.sample(1000000)
+#real_data = real_data.sample(100000)
 ## get the unique nodes for real data
 real_target_nodes = real_data[["target_id_{}".format(i) for i in range(6)]]
 real_target_nodes.columns = ["id_{}".format(i) for i in range(6)]
@@ -27,7 +27,7 @@ num_real_nodes = real_nodes.shape[0]
 scaler = StandardScaler()
 real_nodes_scaled = pd.DataFrame(scaler.fit_transform(real_nodes), columns=real_nodes.columns)
 real_nodes_avg_distance = []
-for i, chunk in tqdm(real_nodes_scaled.groupby(np.arange(len(real_nodes_scaled))//10000), desc= "Calculating Average Distance between Real Nodes"):
+for i, chunk in tqdm(real_nodes_scaled.groupby(np.arange(len(real_nodes_scaled))//15000), desc= "Calculating Average Distance between Real Nodes"):
     real_nodes_avg_distance.append(np.mean(cdist(real_nodes_scaled.drop(chunk.index).values, chunk.values, 'euclid')))
 real_nodes_avg_distance = np.mean(real_nodes_avg_distance)
 
@@ -54,19 +54,19 @@ for model in models:
 
     synth_nodes_avg_distances = {}
     synthetic_nodes_scaled = pd.DataFrame(scaler.fit_transform(synthetic_nodes), columns=synthetic_nodes.columns)
-    for n_clusters in tqdm(range(int(num_real_nodes*0.5), int(num_real_nodes*2), 10000), desc="Search for optimal Number of Nodes"):
+    for n_clusters in tqdm(range(int(num_real_nodes*0.5), int(num_real_nodes*2), 30000), desc="Search for optimal Number of Nodes"):
         kms = MiniBatchKMeans(n_clusters= n_clusters, init= "k-means++", n_init= "auto", batch_size= 4096)
         kms.fit(synthetic_nodes_scaled)
-        new_synthetic_nodes = kms.cluster_centers_
+        new_synthetic_nodes = pd.DataFrame(kms.cluster_centers_)
 
         synthetic_nodes_avg_distance = []
-        for i, chunk in tqdm(new_synthetic_nodes.groupby(np.arange(len(new_synthetic_nodes)) // 10000)):
+        for i, chunk in new_synthetic_nodes.groupby(np.arange(len(new_synthetic_nodes)) // 15000):
             synthetic_nodes_avg_distance.append(np.mean(cdist(new_synthetic_nodes.drop(chunk.index).values, chunk.values, 'euclid')))
         synthetic_nodes_avg_distance = np.mean(synthetic_nodes_avg_distance)
 
         synth_nodes_avg_distances[n_clusters] = synthetic_nodes_avg_distance
 
-    n_cluster = min(synth_nodes_avg_distances, key=lambda x:abs(x- real_nodes_avg_distance))
+    n_cluster = min(synth_nodes_avg_distances, key=lambda x:abs(x - real_nodes_avg_distance))
     kms = KMeans(n_clusters=n_cluster, random_state=42, n_init="auto")
     synthetic_nodes["node_id"] = kms.fit_predict(synthetic_nodes)
 
