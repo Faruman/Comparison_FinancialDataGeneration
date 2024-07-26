@@ -57,7 +57,7 @@ for model in models:
     synthetic_nodes_scaled = pd.DataFrame(scaler.fit_transform(synthetic_nodes), columns=synthetic_nodes.columns)
     for n_clusters in tqdm(range(int(num_real_nodes*0.25), int(num_real_nodes*1.5), 30000), desc="Search for optimal Number of Nodes"):
         if not os.path.exists("./working/kmeans_{}/kmeans_{}_{}.pkl".format(model, model, n_clusters)):
-            kms = MiniBatchKMeans(n_clusters= n_clusters, init= "k-means++", n_init= "auto", batch_size= 4096)
+            kms = MiniBatchKMeans(n_clusters= n_clusters, init= "k-means++", n_init= "auto", batch_size= 8192)
             kms.fit(synthetic_nodes_scaled)
             if not os.path.exists("./working/kmeans_{}".format(model)):
                 os.makedirs("./working/kmeans_{}")
@@ -70,7 +70,7 @@ for model in models:
         new_synthetic_nodes = kms.cluster_centers_
 
         synthetic_nodes_avg_distance = []
-        for i, chunk in tqdm(new_synthetic_nodes.groupby(np.arange(len(new_synthetic_nodes)) // 10000)):
+        for i, chunk in tqdm(new_synthetic_nodes.groupby(np.arange(len(new_synthetic_nodes)) // 15000)):
             synthetic_nodes_avg_distance.append(np.mean(cdist(new_synthetic_nodes.drop(chunk.index).values, chunk.values, 'euclid')))
         synthetic_nodes_avg_distance = np.mean(synthetic_nodes_avg_distance)
 
