@@ -61,7 +61,7 @@ for model in models:
             kms = MiniBatchKMeans(n_clusters= n_clusters, init= "k-means++", n_init= "auto", batch_size= 8192)
             kms.fit(synthetic_nodes_scaled)
             if not os.path.exists("./working/kmeans_{}".format(model)):
-                os.makedirs("./working/kmeans_{}")
+                os.makedirs("./working/kmeans_{}".format(model))
             with open("./working/kmeans_{}/kmeans_{}_{}.pkl".format(model, model, n_clusters), 'wb') as f:
                 pickle.dump(kms, f)
         else:
