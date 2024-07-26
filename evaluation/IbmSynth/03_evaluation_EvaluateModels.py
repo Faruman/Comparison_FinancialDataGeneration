@@ -14,7 +14,6 @@ models = ['DOPPELGANGER', 'FINDIFF', 'TVAE', 'WGAN', 'CTGAN']
 keep_col = ['Receiving Currency', 'Amount Paid', 'Payment Currency', 'Payment Format', 'Is Laundering', 'transaction_clusters']
 
 real_data = pd.read_csv("./working/transformed_df_graph.csv")
-real_data = real_data.sample(200000)
 
 if not os.path.exists("./results"):
     os.makedirs("./results")
@@ -29,7 +28,7 @@ for model in models:
     with open("./model/{}.pkl".format(model), 'rb') as file:
         synthesizer = pickle.load(file)
 
-    synthetic_data = synthesizer.sample(num_rows= real_data.shape[0])
+    synthetic_data = synthesizer.sample(num_rows= 100000)
 
     metadata = SingleTableMetadata()
     metadata.detect_from_dataframe(real_data[keep_col])
@@ -65,17 +64,32 @@ for model in models:
     sample_size = 100
     i = 0
     min_distances = np.array([])
+    second_min_distances = np.array([])
     while i < synthetic_data_scaled.shape[0]:
         # Calculate the Euclidean distances
         synthetic_data_chunk = synthetic_data_scaled.iloc[i:i + sample_size]
         distances = cdist(synthetic_data_chunk.values, real_data_scaled.values, metric='euclidean')
+        min_values = np.min(distances, axis=1)
+        # To find the second minimum value for each row, we can mask the minimum values and find the minimum of the remaining elements
+        masked_distances = np.where(distances == min_values[:, None], np.inf, distances)
+        second_min_values = np.min(masked_distances, axis=1)
         # Find the minimum distance for each synthetic record
-        min_distances = np.concatenate((min_distances, distances.min(axis=1)))
+        min_distances = np.concatenate((min_distances, min_values))
+        second_min_distances = np.concatenate((second_min_distances, second_min_values))
         i += sample_size
+
+    ratio = min_distances / second_min_distances
+
     mean_dcr = np.mean(min_distances)
     median_dcr = np.median(min_distances)
+    mean_dcr_5th = np.mean(np.percentile(min_distances, 5))
     median_dcr_5th = np.median(np.percentile(min_distances, 5))
-    privacy_dict = {"Privacy Mean": mean_dcr, "Privacy Median": median_dcr, "Privacy Median 5th": median_dcr_5th}
+    mean_nnrn = np.mean(ratio)
+    median_nnrn = np.median(ratio)
+    mean_nnrn_5th = np.mean(np.percentile(ratio, 5))
+    median_nnrn_5th = np.median(np.percentile(ratio, 5))
+    privacy_dict = {"Mean DCR": mean_dcr, "Median DCR": median_dcr, "Mean 5th DCR": mean_dcr_5th, "Median 5th DCR": median_dcr_5th,
+                    "Mean NNRN": mean_nnrn, "Median NNRN": median_nnrn, "Mean NNRN 5th DCR": mean_nnrn_5th, "Median NNRN 5th DCR": median_nnrn_5th}
 
     # Store the results per model
     results_df = pd.concat((results_df, pd.DataFrame({**fidelity_dict, **synthesis_dict, **privacy_dict}, index=[model])))

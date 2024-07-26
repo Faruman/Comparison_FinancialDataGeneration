@@ -20,7 +20,7 @@ models = ['DOPPELGANGER', 'FINDIFF', 'TVAE', 'WGAN', 'CTGAN']
 keep_col = ['Receiving Currency', 'Amount Paid', 'Payment Currency', 'Payment Format', 'Is Laundering', 'transaction_clusters']
 
 real_data = pd.read_csv("./working/transformed_df_graph.csv")
-#real_data = real_data.sample(100000)
+#real_data = real_data.sample(10000)
 ## get the unique nodes for real data
 real_target_nodes = real_data[["target_id_{}".format(i) for i in range(6)]]
 real_target_nodes.columns = ["id_{}".format(i) for i in range(6)]
