@@ -14,6 +14,7 @@ models = ['DOPPELGANGER', 'FINDIFF', 'TVAE', 'WGAN', 'CTGAN']
 keep_col = ['Receiving Currency', 'Amount Paid', 'Payment Currency', 'Payment Format', 'Is Laundering', 'transaction_clusters']
 
 real_data = pd.read_csv("./working/transformed_df_graph.csv")
+real_data = real_data.sample(200000)
 
 if os.path.exists("./working/evaluation.xlsx"):
     results_df = pd.read_excel("./working/evaluation.xlsx")
@@ -45,7 +46,7 @@ for model in models:
     # Evaluate Privacy
     real_data_oh = pd.DataFrame()
     synthetic_data_oh = pd.DataFrame()
-    for column_name, sdtype in metadata.columns:
+    for column_name, sdtype in metadata.columns.items():
         if sdtype["sdtype"] == 'categorical':
             ohe = OneHotEncoder()
             temp = pd.DataFrame(ohe.fit_transform(real_data[column_name].values.reshape(-1, 1)).todense(), columns= ["{}_{}".format(column_name, i) for i in range(real_data[column_name].nunique())], index= real_data.index)
@@ -70,7 +71,8 @@ for model in models:
         i += sample_size
     mean_dcr = np.mean(min_distances)
     median_dcr = np.median(min_distances)
-    privacy_dict = {"Privacy Mean": mean_dcr, "Privacy Median": median_dcr}
+    median_dcr_5th = np.median(np.percentile(min_distances, 5))
+    privacy_dict = {"Privacy Mean": mean_dcr, "Privacy Median": median_dcr, "Privacy Median 5th": median_dcr_5th}
 
     # Store the results per model
     results_df = pd.concat((results_df, pd.DataFrame({**fidelity_dict, **synthesis_dict, **privacy_dict}, index=[model])))
