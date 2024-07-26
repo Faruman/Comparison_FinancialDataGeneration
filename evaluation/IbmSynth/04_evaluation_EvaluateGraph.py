@@ -36,6 +36,9 @@ for i, chunk in tqdm(real_nodes_scaled.groupby(np.arange(len(real_nodes_scaled))
     real_nodes_avg_distance.append(np.mean(cdist(real_nodes_scaled.drop(chunk.index).values, chunk.values, 'euclid')))
 real_nodes_avg_distance = np.mean(real_nodes_avg_distance)
 
+if not os.path.exists("./results"):
+    os.makedirs("./results")
+
 # transform data back into graph structure
 for model in models:
     print("Currently Processing Model: {}".format(model))
@@ -111,6 +114,6 @@ for model in models:
     deltacon0_distance = deltacon0(nx.adjacency_matrix(real_graph), nx.adjacency_matrix(synthetic_graph))
 
     results_df = results_df.append({"Model": model, "NetSimile": netsimile_distance, "DeltaCon0": deltacon0_distance}, ignore_index=True)
-    results_df.to_excel("./working/evaluation_graph.xlsx", index=False)
+    results_df.to_excel("./results/evaluation_graph.xlsx", index=False)
 
-results_df.to_excel("./working/evaluation_graph.xlsx", index=False)
+results_df.to_excel("./results/evaluation_graph.xlsx", index=False)

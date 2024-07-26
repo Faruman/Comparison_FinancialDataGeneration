@@ -16,8 +16,11 @@ keep_col = ['Receiving Currency', 'Amount Paid', 'Payment Currency', 'Payment Fo
 real_data = pd.read_csv("./working/transformed_df_graph.csv")
 real_data = real_data.sample(200000)
 
-if os.path.exists("./working/evaluation.xlsx"):
-    results_df = pd.read_excel("./working/evaluation.xlsx")
+if not os.path.exists("./results"):
+    os.makedirs("./results")
+
+if os.path.exists("./results/evaluation.xlsx"):
+    results_df = pd.read_excel("./results/evaluation.xlsx")
 else:
     results_df = pd.DataFrame()
 
@@ -78,6 +81,6 @@ for model in models:
     results_df = pd.concat((results_df, pd.DataFrame({**fidelity_dict, **synthesis_dict, **privacy_dict}, index=[model])))
 
     results_df.drop_duplicates()
-    results_df.to_excel("./working/evaluation.xlsx", index=False)
+    results_df.to_excel("./results/evaluation.xlsx", index=False)
 
-results_df.to_excel("./working/evaluation.xlsx", index=False)
+results_df.to_excel("./results/evaluation.xlsx", index=False)
