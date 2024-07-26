@@ -1,3 +1,4 @@
+import os.path
 import pickle
 
 from tqdm import tqdm
@@ -54,9 +55,18 @@ for model in models:
 
     synth_nodes_avg_distances = {}
     synthetic_nodes_scaled = pd.DataFrame(scaler.fit_transform(synthetic_nodes), columns=synthetic_nodes.columns)
-    for n_clusters in tqdm(range(int(num_real_nodes*0.5), int(num_real_nodes*2), 10000), desc="Search for optimal Number of Nodes"):
-        kms = MiniBatchKMeans(n_clusters= n_clusters, init= "k-means++", n_init= "auto", batch_size= 4096)
-        kms.fit(synthetic_nodes_scaled)
+    for n_clusters in tqdm(range(int(num_real_nodes*0.25), int(num_real_nodes*1.5), 30000), desc="Search for optimal Number of Nodes"):
+        if not os.path.exists("./working/kmeans_{}/kmeans_{}_{}.pkl".format(model, model, n_clusters)):
+            kms = MiniBatchKMeans(n_clusters= n_clusters, init= "k-means++", n_init= "auto", batch_size= 4096)
+            kms.fit(synthetic_nodes_scaled)
+            if not os.path.exists("./working/kmeans_{}".format(model)):
+                os.makedirs("./working/kmeans_{}")
+            with open("./working/kmeans_{}/kmeans_{}_{}.pkl".format(model, model, n_clusters), 'wb') as f:
+                pickle.dump(kms, f)
+        else:
+            with open("./working/kmeans_{}/kmeans_{}_{}.pkl".format(model, model, n_clusters), 'rb') as f:
+                kms = pickle.load(f)
+
         new_synthetic_nodes = kms.cluster_centers_
 
         synthetic_nodes_avg_distance = []
@@ -67,13 +77,12 @@ for model in models:
         synth_nodes_avg_distances[n_clusters] = synthetic_nodes_avg_distance
 
     n_cluster = min(synth_nodes_avg_distances, key=lambda x:abs(x- real_nodes_avg_distance))
-    kms = KMeans(n_clusters=n_cluster, random_state=42, n_init="auto")
-    synthetic_nodes["node_id"] = kms.fit_predict(synthetic_nodes)
+    with open("./working/kmeans_{}/kmeans_{}_{}.pkl".format(model, model, n_cluster), 'rb') as f:
+        kms = pickle.load(f)
+    synthetic_nodes["node_id"] = kms.predict(synthetic_nodes)
 
     synthetic_data = synthetic_data.merge(synthetic_nodes, left_on= ["target_id_{}".format(i) for i in range(6)], right_on= ["id_{}".format(i) for i in range(6)], how="left")
     synthetic_data = synthetic_data.merge(synthetic_nodes, left_on=["source_id_{}".format(i) for i in range(6)], right_on=["id_{}".format(i) for i in range(6)], how="left")
-    synthetic_data.drop(columns = ["target_id_{}".format(i) for i in range(6)])
-    synthetic_data.drop(columns = ["source_id_{}".format(i) for i in range(6)])
 
     synthetic_data.to_csv("./synth/{}_synthetic_data_graph.csv".format(model), index=False)
 
