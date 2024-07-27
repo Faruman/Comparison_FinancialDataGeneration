@@ -11,11 +11,11 @@ import numpy as np
 from numpy import linalg as la
 import networkx as nx
 
-from netcomp.linalg import (renormalized_res_mat,resistance_matrix,
+from ..linalg import (renormalized_res_mat,resistance_matrix,
                             fast_bp,laplacian_matrix,normalized_laplacian_eig,
                             _flat,_pad,_eigs)
-from netcomp.distance import get_features,aggregate_features
-from netcomp.exception import InputError
+from .features import get_features,aggregate_features
+from ..exception import InputError
 
 
 ######################
