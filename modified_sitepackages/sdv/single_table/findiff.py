@@ -355,6 +355,10 @@ class BaseDiffuser(object):
     # define gaussian noise sampling
     def p_sample_gauss(self, model_out, z_norm, timesteps):
 
+        self.alphas = self.alphas.to("cuda")
+        self.betas = self.betas.to("cuda")
+        self.alphas_hat = self.alphas_hat.to("cuda")
+
         # determine noise alpha hat
         sqrt_alpha_t = torch.sqrt(self.alphas[timesteps])[:, None]
 

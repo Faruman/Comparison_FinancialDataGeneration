@@ -17,6 +17,7 @@ from modified_sitepackages.netcomp import netsimile, deltacon0
 
 
 models = ['DOPPELGANGER', 'FINDIFF', 'TVAE', 'WGAN', 'CTGAN']
+models = ['WGANGPwDRS', 'CTGAN']
 keep_col = ['Receiving Currency', 'Amount Paid', 'Payment Currency', 'Payment Format', 'Is Laundering', 'transaction_clusters']
 
 real_data = pd.read_csv("./working/transformed_df_graph.csv")
@@ -45,6 +46,8 @@ for model in models:
 
     with open("./model/{}.pkl".format(model), 'rb') as file:
         synthesizer = pickle.load(file)
+
+    synthesizer.device = "cuda"
 
     # sample in batches
     synthetic_data = pd.DataFrame()

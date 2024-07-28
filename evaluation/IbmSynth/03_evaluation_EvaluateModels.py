@@ -10,10 +10,12 @@ from sklearn.preprocessing import StandardScaler, OneHotEncoder
 from scipy.spatial.distance import cdist
 
 
-models = ['DOPPELGANGER', 'FINDIFF', 'TVAE', 'WGAN', 'CTGAN']
+#models = ['DOPPELGANGER', 'FINDIFF', 'TVAE', 'WGANGPwDRS', 'CTGAN']
+models = ['WGANGPwDRS', 'CTGAN']
 keep_col = ['Receiving Currency', 'Amount Paid', 'Payment Currency', 'Payment Format', 'Is Laundering', 'transaction_clusters']
 
 real_data = pd.read_csv("./working/transformed_df_graph.csv")
+real_data = real_data.sample(100000)
 
 if not os.path.exists("./results"):
     os.makedirs("./results")
