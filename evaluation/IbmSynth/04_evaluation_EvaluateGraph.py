@@ -16,8 +16,7 @@ import networkx as nx
 from modified_sitepackages.netcomp import netsimile, deltacon0
 
 
-models = ['DOPPELGANGER', 'FINDIFF', 'TVAE', 'WGAN', 'CTGAN']
-models = ['WGANGPwDRS', 'CTGAN']
+models = ['DOPPELGANGER', 'FINDIFF', 'TVAE', 'WGANGPwDRS', 'CTGAN']
 keep_col = ['Receiving Currency', 'Amount Paid', 'Payment Currency', 'Payment Format', 'Is Laundering', 'transaction_clusters']
 
 real_data = pd.read_csv("./working/transformed_df_graph.csv")
