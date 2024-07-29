@@ -35,16 +35,16 @@ for model in models:
     metadata.detect_from_dataframe(real_data[keep_col])
 
     # Evaluate Fidelity
-    quality_report = evaluate_quality(real_data=real_data[keep_col], synthetic_data=synthetic_data[keep_col], metadata=metadata)
-    fidelity_dict = {**quality_report.get_properties().set_index("Property")["Score"].to_dict()}
+    #quality_report = evaluate_quality(real_data=real_data[keep_col], synthetic_data=synthetic_data[keep_col], metadata=metadata)
+    #fidelity_dict = {**quality_report.get_properties().set_index("Property")["Score"].to_dict()}
 
     # Evaluate Synthesis
-    synthesis_dict = NewRowSynthesis.compute_breakdown(
-        real_data= real_data[keep_col],
-        synthetic_data= synthetic_data[keep_col],
-        metadata= metadata,
-        numerical_match_tolerance=0.01
-    )
+    #synthesis_dict = NewRowSynthesis.compute_breakdown(
+    #    real_data= real_data[keep_col],
+    #    synthetic_data= synthetic_data[keep_col],
+    #    metadata= metadata,
+    #    numerical_match_tolerance=0.01
+    #)
 
     # Evaluate Privacy
     real_data_oh = pd.DataFrame()
@@ -53,12 +53,12 @@ for model in models:
         if sdtype["sdtype"] == 'categorical':
             ohe = OneHotEncoder()
             temp = pd.DataFrame(ohe.fit_transform(real_data[column_name].values.reshape(-1, 1)).todense(), columns= ["{}_{}".format(column_name, i) for i in range(real_data[column_name].nunique())], index= real_data.index)
-            real_data_oh = pd.concat((real_data_oh, temp))
+            real_data_oh = pd.concat((real_data_oh, temp), axis= 1)
             temp = pd.DataFrame(ohe.transform(synthetic_data[column_name].values.reshape(-1, 1)).todense(), columns=["{}_{}".format(column_name, i) for i in range(real_data[column_name].nunique())], index=synthetic_data.index)
-            synthetic_data_oh = pd.concat((synthetic_data_oh, temp))
+            synthetic_data_oh = pd.concat((synthetic_data_oh, temp), axis= 1)
         else:
-            real_data_oh = pd.concat((real_data_oh, real_data[[column_name]]))
-            synthetic_data_oh = pd.concat((synthetic_data_oh, synthetic_data[[column_name]]))
+            real_data_oh = pd.concat((real_data_oh, real_data[[column_name]]), axis= 1)
+            synthetic_data_oh = pd.concat((synthetic_data_oh, synthetic_data[[column_name]]), axis= 1)
     scaler = StandardScaler()
     real_data_scaled = pd.DataFrame(scaler.fit_transform(real_data_oh), columns=real_data_oh.columns)
     synthetic_data_scaled = pd.DataFrame(scaler.transform(synthetic_data_oh), columns=synthetic_data_oh.columns)
@@ -96,6 +96,6 @@ for model in models:
     results_df = pd.concat((results_df, pd.DataFrame({**fidelity_dict, **synthesis_dict, **privacy_dict}, index=[model])))
 
     results_df.drop_duplicates()
-    results_df.to_excel("./results/evaluation.xlsx", index=False)
+    results_df.to_excel("./results/evaluation.xlsx", index=True)
 
-results_df.to_excel("./results/evaluation.xlsx", index=False)
+results_df.to_excel("./results/evaluation.xlsx", index=True)
