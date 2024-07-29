@@ -93,7 +93,8 @@ for model in models:
                     "Mean NNRN": mean_nnrn, "Median NNRN": median_nnrn, "Mean NNRN 5th DCR": mean_nnrn_5th, "Median NNRN 5th DCR": median_nnrn_5th}
 
     # Store the results per model
-    results_df = pd.concat((results_df, pd.DataFrame({**fidelity_dict, **synthesis_dict, **privacy_dict}, index=[model])))
+    #results_df = pd.concat((results_df, pd.DataFrame({**fidelity_dict, **synthesis_dict, **privacy_dict}, index=[model])))
+    results_df = pd.concat((results_df, pd.DataFrame(privacy_dict, index=[model])))
 
     results_df.drop_duplicates()
     results_df.to_excel("./results/evaluation.xlsx", index=True)
