@@ -16,7 +16,7 @@ import networkx as nx
 from modified_sitepackages.netcomp import netsimile, deltacon0
 
 
-models = ['DOPPELGANGER', 'FINDIFF', 'TVAE', 'WGAN', 'CTGAN']
+models = ['DOPPELGANGER', 'FINDIFF', 'TVAE', 'WGANGPwDRS', 'CTGAN']
 keep_col = ['PC1','PC2','PC3','PC4','PC5','PC6','PC7','PC8','PC9','PC10']
 
 real_data = pd.read_csv("./working/transformed_df_graph.csv")
@@ -35,6 +35,7 @@ real_nodes_avg_distance = []
 for i, chunk in tqdm(real_nodes_scaled.groupby(np.arange(len(real_nodes_scaled))//15000), desc= "Calculating Average Distance between Real Nodes"):
     real_nodes_avg_distance.append(np.mean(cdist(real_nodes_scaled.drop(chunk.index).values, chunk.values, 'euclid')))
 real_nodes_avg_distance = np.mean(real_nodes_avg_distance)
+real_nodes_per_datapoint = num_real_nodes / real_data.shape[0]
 
 if not os.path.exists("./results"):
     os.makedirs("./results")
@@ -45,6 +46,8 @@ for model in models:
 
     with open("./model/{}.pkl".format(model), 'rb') as file:
         synthesizer = pickle.load(file)
+
+    synthesizer.device = "cuda"
 
     # sample in batches
     synthetic_data = pd.DataFrame()
@@ -85,35 +88,24 @@ for model in models:
 
         synth_nodes_avg_distances[n_clusters] = synthetic_nodes_avg_distance
 
-    n_cluster = min(synth_nodes_avg_distances, key=lambda x:abs(x- real_nodes_avg_distance))
-    with open("./working/kmeans_{}/kmeans_{}_{}.pkl".format(model, model, n_cluster), 'rb') as f:
+    n_clusters = min(synth_nodes_avg_distances, key=lambda x:abs(x- real_nodes_avg_distance))
+    with open("./working/kmeans_{}/kmeans_{}_{}.pkl".format(model, model, n_clusters), 'rb') as f:
         kms = pickle.load(f)
-    synthetic_nodes["node_id"] = kms.predict(synthetic_nodes)
+    synthetic_nodes_distance = synthetic_nodes
+    synthetic_nodes_distance["node_id"] = kms.predict(synthetic_nodes_distance)
 
-    synthetic_data = synthetic_data.merge(synthetic_nodes, left_on= ["target_id_{}".format(i) for i in range(6)], right_on= ["id_{}".format(i) for i in range(6)], how="left", suffixes= ("", "_target"))
-    synthetic_data = synthetic_data.merge(synthetic_nodes, left_on=["source_id_{}".format(i) for i in range(6)], right_on=["id_{}".format(i) for i in range(6)], how="left", suffixes= ("", "_source"))
+    synthetic_data_distance = synthetic_data.merge(synthetic_nodes_distance, left_on= ["target_id_{}".format(i) for i in range(6)], right_on= ["id_{}".format(i) for i in range(6)], how="left", suffixes= ("", "_target"))
+    synthetic_data_distance = synthetic_data_distance.merge(synthetic_nodes_distance, left_on=["source_id_{}".format(i) for i in range(6)], right_on=["id_{}".format(i) for i in range(6)], how="left", suffixes= ("", "_source"))
 
-    synthetic_data.to_csv("./synth/{}_synthetic_data_graph.csv".format(model), index=False)
+    synthetic_data_distance.to_csv("./synth/{}_synthetic_data_graph_distance.csv".format(model), index=False)
 
-real_data = real_data.reset_index()[["source_id", "target_id", "index"]].groupby(["source_id", "target_id"]).count().reset_index().rename(columns= {"index": "weight"})
-real_graph = nx.from_pandas_edgelist(real_data, source= "source_id", target= "target_id", edge_attr="weight", create_using= nx.DiGraph)
+    n_clusters = int(real_nodes_per_datapoint * synthetic_data.shape[0])
+    kms = MiniBatchKMeans(n_clusters=n_clusters, init="k-means++", n_init="auto", batch_size=8192)
+    kms.fit(synthetic_nodes_scaled)
+    synthetic_nodes_number = synthetic_nodes
+    synthetic_nodes_number["node_id"] = kms.predict(synthetic_nodes_number)
 
-#Calculate the similarity in graph structure
+    synthetic_data_graph_number = synthetic_data.merge(synthetic_nodes_number, left_on=["target_id_{}".format(i) for i in range(6)], right_on=["id_{}".format(i) for i in range(6)], how="left", suffixes=("", "_target"))
+    synthetic_data_graph_number = synthetic_data_graph_number.merge(synthetic_nodes_number, left_on=["source_id_{}".format(i) for i in range(6)], right_on=["id_{}".format(i) for i in range(6)], how="left", suffixes=("", "_source"))
 
-results_df = pd.DataFrame()
-for model in models:
-    synthetic_data = pd.read_csv("./synth/{}_synthetic_data_graph.csv".format(model))
-
-    # create networkx graphs based on the data
-    synthetic_data = synthetic_data.reset_index()[["node_id_source", "node_id_target", "index"]].groupby(["node_id_source", "node_id_target"]).count().reset_index().rename(columns= {"index": "weight"})
-    synthetic_graph = nx.from_pandas_edgelist(synthetic_data, source= "node_id_source", target= "node_id_target", edge_attr="weight", create_using= nx.DiGraph)
-
-    # score NetSimile
-    netsimile_distance = netsimile(nx.adjacency_matrix(real_graph), nx.adjacency_matrix(synthetic_graph))
-    # score deltacon0
-    deltacon0_distance = deltacon0(nx.adjacency_matrix(real_graph), nx.adjacency_matrix(synthetic_graph))
-
-    results_df = results_df.append({"Model": model, "NetSimile": netsimile_distance, "DeltaCon0": deltacon0_distance}, ignore_index=True)
-    results_df.to_excel("./results/evaluation_graph.xlsx", index=False)
-
-results_df.to_excel("./results/evaluation_graph.xlsx", index=False)
+    synthetic_data_graph_number.to_csv("./synth/{}_synthetic_data_graph_number.csv".format(model), index=False)

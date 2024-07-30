@@ -19,7 +19,7 @@ from modified_sitepackages.netcomp import netsimile, deltacon0
 
 
 models = ['DOPPELGANGER', 'FINDIFF', 'TVAE', 'WGANGPwDRS', 'CTGAN']
-keep_col = ['Receiving Currency', 'Amount Paid', 'Payment Currency', 'Payment Format', 'Is Laundering', 'transaction_clusters']
+keep_col = ['PC1','PC2','PC3','PC4','PC5','PC6','PC7','PC8','PC9','PC10']
 min_edge = 13
 
 real_data = pd.read_csv("./working/transformed_df_graph.csv")
