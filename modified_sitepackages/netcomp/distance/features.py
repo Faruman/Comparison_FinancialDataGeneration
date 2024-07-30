@@ -40,9 +40,9 @@ def get_features(A):
 
     """
     try:
-        G = nx.from_scipy_sparse_matrix(A)
+        G = nx.from_scipy_sparse_array(A)
     except AttributeError:
-        G = nx.from_numpy_matrix(A)
+        G = nx.from_numpy_array(A)
     n = len(G)
     # degrees, array so we can slice nice
     d_vec = np.array(list(dict(G.degree()).values()))

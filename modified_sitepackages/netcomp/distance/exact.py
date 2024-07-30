@@ -171,15 +171,15 @@ def lambda_dist(A1, A2, k=None, p=2, kind='laplacian'):
     N = min(n1, n2)  # minimum size between the two graphs
     if k is None or k > N:
         k = N
-    if kind is 'laplacian':
+    if kind == 'laplacian':
         # form matrices
         L1, L2 = [laplacian_matrix(A) for A in [A1, A2]]
         # get eigenvalues, ignore eigenvectors
         evals1, evals2 = [_eigs(L)[0] for L in [L1, L2]]
-    elif kind is 'laplacian_norm':
+    elif kind == 'laplacian_norm':
         # use our function to graph evals of normalized laplacian
         evals1, evals2 = [normalized_laplacian_eig(A)[0] for A in [A1, A2]]
-    elif kind is 'adjacency':
+    elif kind == 'adjacency':
         evals1, evals2 = [_eigs(A)[0] for A in [A1, A2]]
         # reverse, so that we are sorted from large to small, since we care
         # about the k LARGEST eigenvalues for the adjacency distance

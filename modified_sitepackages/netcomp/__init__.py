@@ -19,8 +19,6 @@ if sys.version_info[0] < 3:
     raise ImportError(m % sys.version_info[:2])
 del sys
 
-from netcomp.linalg import *
-import netcomp.linalg
+from .linalg import *
 
-from netcomp.distance import *
-import netcomp.distance
+from .distance import *
