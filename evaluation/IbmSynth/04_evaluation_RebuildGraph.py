@@ -103,7 +103,11 @@ for model in models:
         synthetic_nodes_number = synthetic_nodes
         synthetic_nodes_number["node_id"] = kms.predict(synthetic_nodes_number)
 
-        synthetic_data_graph_number = synthetic_data.merge(synthetic_nodes_number, left_on=["target_id_{}".format(i) for i in range(6)], right_on=["id_{}".format(i) for i in range(6)], how="left", suffixes=("", "_target"))
-        synthetic_data_graph_number = synthetic_data_graph_number.merge(synthetic_nodes_number, left_on=["source_id_{}".format(i) for i in range(6)], right_on=["id_{}".format(i) for i in range(6)], how="left", suffixes=("", "_source"))
+        if "source_id" in synthetic_data.columns:
+            synthetic_data = synthetic_data.drop(columns= ["source_id"])
+        synthetic_nodes_number = synthetic_nodes_number.rename(columns= dict(zip(["id_{}".format(i) for i in range(6)] + ["node_id"], ["target_id_{}".format(i) for i in range(6)] + ["target_id"])))
+        synthetic_data_graph_number = synthetic_data.merge(synthetic_nodes_number, on=["target_id_{}".format(i) for i in range(6)], how="left", suffixes=("", "_target"))
+        synthetic_nodes_number = synthetic_nodes_number.rename(columns=dict(zip(["target_id_{}".format(i) for i in range(6)] + ["target_id"], ["source_id_{}".format(i) for i in range(6)] + ["source_id"])))
+        synthetic_data_graph_number = synthetic_data_graph_number.merge(synthetic_nodes_number, on=["source_id_{}".format(i) for i in range(6)], how="left", suffixes=("", "_source"))
 
         synthetic_data_graph_number.to_csv("./synth/{}_synthetic_data_graph_number.csv".format(model), index=False)

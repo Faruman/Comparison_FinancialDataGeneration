@@ -49,6 +49,8 @@ for model in models:
     # Evaluate Privacy
     real_data_oh = pd.DataFrame()
     synthetic_data_oh = pd.DataFrame()
+    cat_cols = [column_name for column_name, sdtype in metadata.columns.items() if sdtype["sdtype"] == "categorical"]
+    cont_cols = [column_name for column_name, sdtype in metadata.columns.items() if sdtype["sdtype"] != "categorical"]
     for column_name, sdtype in metadata.columns.items():
         if sdtype["sdtype"] == 'categorical':
             ohe = OneHotEncoder()
@@ -57,19 +59,21 @@ for model in models:
             temp = pd.DataFrame(ohe.transform(synthetic_data[column_name].values.reshape(-1, 1)).todense(), columns=["{}_{}".format(column_name, i) for i in range(real_data[column_name].nunique())], index=synthetic_data.index)
             synthetic_data_oh = pd.concat((synthetic_data_oh, temp), axis= 1)
         else:
-            real_data_oh = pd.concat((real_data_oh, real_data[[column_name]]), axis= 1)
-            synthetic_data_oh = pd.concat((synthetic_data_oh, synthetic_data[[column_name]]), axis= 1)
+            scaler = StandardScaler()
+            real_data_oh = pd.concat((real_data_oh, pd.DataFrame(scaler.fit_transform(real_data[[column_name]]), columns= [column_name], index= real_data.index)), axis= 1)
+            synthetic_data_oh = pd.concat((synthetic_data_oh, pd.DataFrame(scaler.transform(synthetic_data[[column_name]]), columns= [column_name], index= synthetic_data.index)), axis= 1)
+    cat_cols = list(set(real_data_oh.columns) - set(cont_cols))
     scaler = StandardScaler()
-    real_data_scaled = pd.DataFrame(scaler.fit_transform(real_data_oh), columns=real_data_oh.columns)
-    synthetic_data_scaled = pd.DataFrame(scaler.transform(synthetic_data_oh), columns=synthetic_data_oh.columns)
     sample_size = 100
     i = 0
     min_distances = np.array([])
     second_min_distances = np.array([])
-    while i < synthetic_data_scaled.shape[0]:
+    while i < synthetic_data_oh.shape[0]:
         # Calculate the Euclidean distances
-        synthetic_data_chunk = synthetic_data_scaled.iloc[i:i + sample_size]
-        distances = cdist(synthetic_data_chunk.values, real_data_scaled.values, metric='euclidean')
+        synthetic_data_chunk = synthetic_data_oh.iloc[i:i + sample_size]
+        distances_euclidean = cdist(synthetic_data_chunk[cont_cols].values, real_data_oh[cont_cols].values, metric='euclidean')
+        distances_hamming = cdist(synthetic_data_chunk[cat_cols].values, real_data_oh[cat_cols].values, metric='hamming')
+        distances = (len(cont_cols) / len(metadata.columns)) * distances_euclidean + (len(cat_cols) / len(metadata.columns)) * distances_hamming
         min_values = np.min(distances, axis=1)
         # To find the second minimum value for each row, we can mask the minimum values and find the minimum of the remaining elements
         masked_distances = np.where(distances == min_values[:, None], np.inf, distances)

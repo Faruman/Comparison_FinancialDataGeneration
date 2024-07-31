@@ -48,13 +48,16 @@ results_df = pd.DataFrame()
 for model in models:
     for cluster_method in ["distance", "number"]:
         synthetic_data = pd.read_csv("./synth/{}_synthetic_data_graph_{}.csv".format(model, cluster_method))
-        if "source_id" in synthetic_data.columns:
+        if "source_id" in synthetic_data.columns and ("node_id_source" in synthetic_data.columns or "node_id_y" in synthetic_data):
             synthetic_data = synthetic_data.drop(columns=["source_id"])
+        if "node_id_x" in synthetic_data.columns and "node_id_y" in synthetic_data.columns:
             synthetic_data = synthetic_data.rename(columns= {"node_id_x": "source_id", "node_id_y": "target_id"})
-        elif "node_id" in synthetic_data.columns:
+        elif "node_id" in synthetic_data.columns and "node_id_source" in synthetic_data.columns:
             synthetic_data = synthetic_data.rename(columns={"node_id_source": "source_id", "node_id": "target_id"})
-        else:
+        elif "node_id_source" in synthetic_data.columns and "node_id_target" in synthetic_data.columns:
             synthetic_data = synthetic_data.rename(columns={"node_id_source": "source_id", "node_id_target": "target_id"})
+        else:
+            pass
 
         # create networkx graphs based on the data
         synthetic_data = synthetic_data.loc[~(synthetic_data["source_id"] == synthetic_data["target_id"])]
@@ -85,7 +88,7 @@ for model in models:
         # score deltacon0
         deltacon0_distance = deltacon0(nx.adjacency_matrix(real_graph), nx.adjacency_matrix(synthetic_graph))
 
-        results_df = results_df.append({"Model": model, "NetSimile": netsimile_distance, "DeltaCon0": deltacon0_distance}, ignore_index=True)
+        results_df = pd.concat((results_df, pd.DataFrame({"Model": model, "Method": cluster_method, "NetSimile": netsimile_distance, "DeltaCon0": deltacon0_distance}, index=  [model + "_" + cluster_method])), axis= 0)
         results_df.to_excel("./results/evaluation_graph.xlsx", index=False)
 
     results_df.to_excel("./results/evaluation_graph.xlsx", index=False)
