@@ -54,7 +54,8 @@ else:
 
 #Calculate the similarity in graph structure
 for model in models:
-    for cluster_method in ["distance", "number"]:
+    #for cluster_method in ["distance", "number"]:
+    for cluster_method in ["number"]:
         synthetic_data = pd.read_csv("./synth/{}_synthetic_data_graph_{}.csv".format(model, cluster_method), encoding = "ISO-8859-1", low_memory=False)
         if "source_id" in synthetic_data.columns and ("node_id_source" in synthetic_data.columns or "node_id_y" in synthetic_data):
             synthetic_data = synthetic_data.drop(columns=["source_id"])
