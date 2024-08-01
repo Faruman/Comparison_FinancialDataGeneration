@@ -18,7 +18,8 @@ from matplotlib import pyplot as plt
 from modified_sitepackages.netcomp import netsimile, deltacon0
 
 
-models = ['DOPPELGANGER', 'FINDIFF', 'TVAE', 'WGANGPwDRS', 'CTGAN']
+#models = ['DOPPELGANGER', 'FINDIFF', 'TVAE', 'WGANGPwDRS', 'CTGAN']
+models = ['WGANGPwDRS', 'CTGAN']
 keep_col = ['Receiving Currency', 'Amount Paid', 'Payment Currency', 'Payment Format', 'Is Laundering', 'transaction_clusters']
 min_edges_plot = 13
 min_edges_similarity = 10
@@ -44,11 +45,18 @@ nx.draw(G_draw, width=edge_weight, node_size=5, with_labels= False)
 plt.savefig("./plots/networkGraph_realData_minEdge{}.png".format(min_edges_plot))
 plt.show()
 
+node_degree_dict = nx.degree(real_graph)
+real_graph = nx.subgraph(real_graph, [x for x in real_graph.nodes() if node_degree_dict[x] >= min_edges_similarity])
+
+if os.path.exists("./results/evaluation_graph.xlsx"):
+    results_df = pd.read_excel("./results/evaluation_graph.xlsx")
+else:
+    results_df = pd.DataFrame()
+
 #Calculate the similarity in graph structure
-results_df = pd.DataFrame()
 for model in models:
     for cluster_method in ["distance", "number"]:
-        synthetic_data = pd.read_csv("./synth/{}_synthetic_data_graph_{}.csv".format(model, cluster_method))
+        synthetic_data = pd.read_csv("./synth/{}_synthetic_data_graph_{}.csv".format(model, cluster_method), encoding = "ISO-8859-1", low_memory=False)
         if "source_id" in synthetic_data.columns and ("node_id_source" in synthetic_data.columns or "node_id_y" in synthetic_data):
             synthetic_data = synthetic_data.drop(columns=["source_id"])
         if "node_id_x" in synthetic_data.columns and "node_id_y" in synthetic_data.columns:
@@ -78,11 +86,8 @@ for model in models:
         plt.show()
 
         # create smaller graph for testing
-        node_degree_dict = nx.degree(real_graph)
-        real_graph = nx.subgraph(real_graph, [x for x in real_graph.nodes() if node_degree_dict[x] >= min_edges_similarity])
         node_degree_dict = nx.degree(synthetic_graph)
         synthetic_graph = nx.subgraph(synthetic_graph, [x for x in synthetic_graph.nodes() if node_degree_dict[x] >= min_edges_similarity])
-
 
         # score NetSimile
         netsimile_distance = netsimile(nx.adjacency_matrix(real_graph), nx.adjacency_matrix(synthetic_graph))
