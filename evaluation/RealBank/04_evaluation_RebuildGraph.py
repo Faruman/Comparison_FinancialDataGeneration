@@ -11,8 +11,7 @@ from scipy.spatial.distance import pdist, cdist
 from sklearn.cluster import KMeans, MiniBatchKMeans
 from sklearn.preprocessing import StandardScaler
 
-#models = ['DOPPELGANGER', 'FINDIFF', 'TVAE', 'WGANGPwDRS', 'CTGAN']
-models = ['TVAE']
+models = ['DOPPELGANGER', 'FINDIFF', 'TVAE', 'WGANGPwDRS', 'CTGAN']
 keep_col = ['PC1','PC2','PC3','PC4','PC5','PC6','PC7','PC8','PC9','PC10']
 
 real_data = pd.read_csv("./working/transformed_pca_extd_df_graph.csv")
@@ -100,9 +99,8 @@ for model in models:
         n_clusters = int(real_nodes_per_datapoint * synthetic_data.shape[0])
         kms = MiniBatchKMeans(n_clusters=n_clusters, init="k-means++", n_init="auto", batch_size=8192)
         kms.fit(synthetic_nodes_scaled)
-        synthetic_nodes_number = synthetic_nodes_scaled
-        synthetic_nodes_number["node_id"] = kms.predict(synthetic_nodes_number)
-
+        synthetic_nodes_number = synthetic_nodes
+        synthetic_nodes_number["node_id"] = kms.predict(synthetic_nodes_scaled)
 
         if "source_id" in synthetic_data.columns:
             synthetic_data = synthetic_data.drop(columns= ["source_id"])

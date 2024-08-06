@@ -18,15 +18,18 @@ from matplotlib import pyplot as plt
 from modified_sitepackages.netcomp import netsimile, deltacon0
 
 
-models = ['DOPPELGANGER', 'FINDIFF', 'TVAE', 'WGANGPwDRS', 'CTGAN']
+#models = ['DOPPELGANGER', 'FINDIFF', 'TVAE', 'WGANGPwDRS', 'CTGAN']
+models = ['TVAE']
 keep_col = ['PC1','PC2','PC3','PC4','PC5','PC6','PC7','PC8','PC9','PC10']
-min_edges_plot = 13
-min_edges_similarity = 10
+min_edges_plot = 3
+min_edges_similarity = 3
 
-real_data = pd.read_csv("./working/transformed_df_graph.csv")
+real_data = pd.read_csv("./working/transformed_pca_extd_df_graph.csv")
 
 if not os.path.exists("./results"):
     os.makedirs("./results")
+if not os.path.exists("./plots"):
+    os.makedirs("./plots")
 
 real_data = real_data.loc[~(real_data["source_id"] == real_data["target_id"])]
 real_data = real_data.reset_index()[["source_id", "target_id", "index"]].groupby(["source_id", "target_id"]).count().reset_index().rename(columns= {"index": "weight"})
