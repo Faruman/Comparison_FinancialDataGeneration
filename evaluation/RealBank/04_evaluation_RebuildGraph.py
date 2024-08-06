@@ -11,10 +11,11 @@ from scipy.spatial.distance import pdist, cdist
 from sklearn.cluster import KMeans, MiniBatchKMeans
 from sklearn.preprocessing import StandardScaler
 
-models = ['DOPPELGANGER', 'FINDIFF', 'TVAE', 'WGANGPwDRS', 'CTGAN']
+#models = ['DOPPELGANGER', 'FINDIFF', 'TVAE', 'WGANGPwDRS', 'CTGAN']
+models = ['TVAE']
 keep_col = ['PC1','PC2','PC3','PC4','PC5','PC6','PC7','PC8','PC9','PC10']
 
-real_data = pd.read_csv("./working/transformed_df_graph.csv")
+real_data = pd.read_csv("./working/transformed_pca_extd_df_graph.csv")
 #real_data = real_data.sample(10000)
 ## get the unique nodes for real data
 real_target_nodes = real_data[["target_id_{}".format(i) for i in range(6)]]
@@ -26,10 +27,10 @@ num_real_nodes = real_nodes.shape[0]
 ## calculate average distance between the nodes for real data
 scaler = StandardScaler()
 real_nodes_scaled = pd.DataFrame(scaler.fit_transform(real_nodes), columns=real_nodes.columns)
-real_nodes_avg_distance = []
-for i, chunk in tqdm(real_nodes_scaled.groupby(np.arange(len(real_nodes_scaled))//15000), desc= "Calculating Average Distance between Real Nodes"):
-    real_nodes_avg_distance.append(np.mean(cdist(real_nodes_scaled.drop(chunk.index).values, chunk.values, 'euclid')))
-real_nodes_avg_distance = np.mean(real_nodes_avg_distance)
+#real_nodes_avg_distance = []
+#for i, chunk in tqdm(real_nodes_scaled.groupby(np.arange(len(real_nodes_scaled))//15000), desc= "Calculating Average Distance between Real Nodes"):
+#    real_nodes_avg_distance.append(np.mean(cdist(real_nodes_scaled.drop(chunk.index).values, chunk.values, 'euclid')))
+#real_nodes_avg_distance = np.mean(real_nodes_avg_distance)
 real_nodes_per_datapoint = num_real_nodes / real_data.shape[0]
 
 if not os.path.exists("./results"):
@@ -99,8 +100,9 @@ for model in models:
         n_clusters = int(real_nodes_per_datapoint * synthetic_data.shape[0])
         kms = MiniBatchKMeans(n_clusters=n_clusters, init="k-means++", n_init="auto", batch_size=8192)
         kms.fit(synthetic_nodes_scaled)
-        synthetic_nodes_number = synthetic_nodes
+        synthetic_nodes_number = synthetic_nodes_scaled
         synthetic_nodes_number["node_id"] = kms.predict(synthetic_nodes_number)
+
 
         if "source_id" in synthetic_data.columns:
             synthetic_data = synthetic_data.drop(columns= ["source_id"])

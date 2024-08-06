@@ -88,7 +88,7 @@ for model in models:
         n_clusters = min(synth_nodes_avg_distances, key=lambda x:abs(x- real_nodes_avg_distance))
         with open("./working/kmeans_{}/kmeans_{}_{}.pkl".format(model, model, n_clusters), 'rb') as f:
             kms = pickle.load(f)
-        synthetic_nodes_distance = synthetic_nodes
+        synthetic_nodes_distance = synthetic_nodes_scaled
         synthetic_nodes_distance["node_id"] = kms.predict(synthetic_nodes_distance)
 
         synthetic_data_distance = synthetic_data.merge(synthetic_nodes_distance, left_on= ["target_id_{}".format(i) for i in range(6)], right_on= ["id_{}".format(i) for i in range(6)], how="left", suffixes= ("", "_target"))
@@ -100,7 +100,7 @@ for model in models:
         n_clusters = int(real_nodes_per_datapoint * synthetic_data.shape[0])
         kms = MiniBatchKMeans(n_clusters=n_clusters, init="k-means++", n_init="auto", batch_size=8192)
         kms.fit(synthetic_nodes_scaled)
-        synthetic_nodes_number = synthetic_nodes
+        synthetic_nodes_number = synthetic_nodes_scaled
         synthetic_nodes_number["node_id"] = kms.predict(synthetic_nodes_number)
 
         if "source_id" in synthetic_data.columns:
