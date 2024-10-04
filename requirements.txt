@@ -1,0 +1,18 @@
+pandas == 2.0.3
+seaborn == 0.13.2
+networkx == 3.0
+scipy == 1.10.1
+sdv == 1.14.0
+category_encoders == 2.6.3
+torch == 2.3.1
+openpyxl == 3.1.5
+wandb==0.17.4
+stellargraph==1.2.1
+chardet==5.2.0
+c_index==0.0.2
+kneed==0.8.5
+k_means_constrained==0.7.3
+kmodes==0.12.2
+bitarray==2.9.2
+protobuf==3.20.*
+tensorflow==2.9.0

@@ -1,0 +1,17 @@
+.idea
+venv
+
+data/IbmSynth
+data/RealBank
+working
+model
+
+wandb
+parameterSearch/RealBank/wandb
+evaluation/RealBank/wandb
+
+*_hidden*
+**/working
+**/synth
+**/model
+**/old
