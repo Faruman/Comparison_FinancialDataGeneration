@@ -14,7 +14,7 @@ This resulted in the selection of the following algorithms to be investigated mo
 
 ## Algorithm Evaluation: Synthetic Financial Transaction Data
 
-This section contains the code for tuning, training and evaluatinng the previously identified algorithms for synthetic financial transaction data generation. This is done in two steps, first the optimal hyperparameters for each synthetic data generation algorithm are identified and secondly the algorithm in combination with the best hyper paramaters is trained and then evaluated by comparing its generated data to the training dataset.
+This section contains the code for tuning, training and evaluating the previously identified algorithms for synthetic financial transaction data generation. This is done in two steps, first the optimal hyperparameters for each synthetic data generation algorithm are identified and secondly the algorithm in combination with the best hyper paramaters is trained and then evaluated by comparing its generated data to the training dataset.
 ### [Hyperparameter Selection](parameterSearch/README.MD)
 Detailed steps and code used for hyperparameter optimization of different generative models introduced previously. This section outlines how the best-performing hyperparameters were selected for each model to maximize quality of the synthetic data and similarity to real data.
 
